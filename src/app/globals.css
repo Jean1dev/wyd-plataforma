@@ -1,0 +1,434 @@
+@import "tailwindcss";
+
+/* ============================================================
+   WYD Realm — Design tokens
+   Ported from the WYD Realm design system (colors / typography /
+   spacing / effects / base). Font families are wired to the
+   next/font/google variables defined in layout.tsx.
+   ============================================================ */
+
+:root {
+  /* ---- Base: Obsidian / Iron (dark structural surfaces) ---- */
+  --obsidian-900: #0a0805;
+  --obsidian-800: #14110c;
+  --obsidian-700: #1d1812;
+  --obsidian-600: #29221a;
+  --obsidian-500: #382e22;
+  --iron-400:     #4d4030;
+  --iron-300:     #6b5a44;
+  --iron-200:     #8a7659;
+
+  /* ---- Parchment (lore / content / light surfaces) ---- */
+  --parchment-50:  #f6eed9;
+  --parchment-100: #ede0c4;
+  --parchment-200: #ddcaa4;
+  --parchment-300: #c8b083;
+  --parchment-400: #ad9362;
+
+  /* ---- Gold / Bronze (primary) ---- */
+  --gold-800: #6e521f;
+  --gold-700: #8a6829;
+  --gold-600: #a87f33;
+  --gold-500: #c8a35b;
+  --gold-400: #dcbd7e;
+  --gold-300: #ecd6a4;
+
+  /* ---- Steel Blue ---- */
+  --steel-700: #2c4a5c;
+  --steel-600: #3f6178;
+  --steel-500: #5b8fb0;
+  --steel-400: #82b1cd;
+  --steel-300: #aed1e4;
+
+  /* ---- Blood Crimson ---- */
+  --blood-800: #451314;
+  --blood-700: #5e1a1c;
+  --blood-600: #8b2326;
+  --blood-500: #b03a36;
+  --blood-400: #cb5a52;
+
+  /* ---- Emerald ---- */
+  --emerald-700: #1f4d31;
+  --emerald-600: #2f6b45;
+  --emerald-500: #3e8c5a;
+  --emerald-400: #5fb07c;
+
+  /* ---- Amethyst ---- */
+  --amethyst-600: #5a3f7a;
+  --amethyst-500: #7d5aa6;
+  --amethyst-400: #a07fc7;
+
+  /* ===================== SEMANTIC ALIASES ===================== */
+
+  /* Surfaces */
+  --surface-base:      var(--obsidian-800);
+  --surface-raised:    var(--obsidian-700);
+  --surface-card:      var(--obsidian-600);
+  --surface-inset:     var(--obsidian-900);
+  --surface-parchment: var(--parchment-100);
+  --surface-overlay:   rgba(10, 8, 5, 0.78);
+
+  /* Borders */
+  --border-subtle:  var(--iron-400);
+  --border-default: var(--iron-300);
+  --border-gold:    var(--gold-600);
+  --border-steel:   var(--steel-600);
+
+  /* Text on dark */
+  --text-heading:  var(--gold-400);
+  --text-body:     var(--parchment-200);
+  --text-muted:    var(--iron-200);
+  --text-faint:    var(--iron-300);
+  --text-inverse:  var(--obsidian-900);
+
+  /* Text on parchment */
+  --text-on-parchment:        var(--obsidian-800);
+  --text-on-parchment-muted:  var(--gold-800);
+
+  /* Accents / intent */
+  --accent-primary: var(--gold-500);
+  --accent-steel:   var(--steel-500);
+  --link:           var(--steel-400);
+  --link-hover:     var(--steel-300);
+
+  --intent-danger:  var(--blood-500);
+  --intent-success: var(--emerald-500);
+  --intent-premium: var(--amethyst-500);
+  --intent-warning: var(--gold-400);
+
+  /* Class colors (the 4 WYD archetypes) */
+  --class-transknight: var(--steel-500);
+  --class-foema:       var(--amethyst-500);
+  --class-beastmaster: var(--emerald-500);
+  --class-huntress:    var(--blood-500);
+
+  /* Bars (game vitals) */
+  --bar-hp:   var(--blood-500);
+  --bar-mp:   var(--steel-500);
+  --bar-exp:  var(--gold-500);
+
+  /* ===================== TYPOGRAPHY ===================== */
+
+  /* Families — wired to next/font (layout.tsx) with fallbacks */
+  --font-display: var(--font-cinzel), "Times New Roman", serif;
+  --font-hero:    var(--font-cinzel-dec), var(--font-cinzel), serif;
+  --font-body:    var(--font-spectral), Georgia, serif;
+  --font-ui:      var(--font-oswald), "Arial Narrow", sans-serif;
+  --font-mono:    var(--font-jetbrains), monospace;
+
+  /* Type scale */
+  --text-2xs:  0.6875rem;
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.375rem;
+  --text-2xl:  1.75rem;
+  --text-3xl:  2.25rem;
+  --text-4xl:  3rem;
+  --text-5xl:  4rem;
+  --text-6xl:  5.5rem;
+
+  /* Weights */
+  --weight-light:    300;
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+  --weight-black:    900;
+
+  /* Line heights */
+  --leading-tight:   1.1;
+  --leading-snug:    1.3;
+  --leading-normal:  1.55;
+  --leading-relaxed: 1.75;
+
+  /* Letter spacing */
+  --tracking-tight:  -0.01em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.06em;
+  --tracking-wider:  0.12em;
+  --tracking-widest: 0.22em;
+
+  /* Semantic roles */
+  --type-hero:    var(--weight-black) var(--text-6xl)/var(--leading-tight) var(--font-hero);
+  --type-h1:      var(--weight-bold) var(--text-4xl)/var(--leading-tight) var(--font-display);
+  --type-h2:      var(--weight-bold) var(--text-3xl)/var(--leading-tight) var(--font-display);
+  --type-h3:      var(--weight-semibold) var(--text-2xl)/var(--leading-snug) var(--font-display);
+  --type-h4:      var(--weight-semibold) var(--text-xl)/var(--leading-snug) var(--font-display);
+  --type-body:    var(--weight-regular) var(--text-base)/var(--leading-normal) var(--font-body);
+  --type-body-sm: var(--weight-regular) var(--text-sm)/var(--leading-normal) var(--font-body);
+  --type-label:   var(--weight-medium) var(--text-sm)/1 var(--font-ui);
+  --type-mono:    var(--weight-regular) var(--text-sm)/1.4 var(--font-mono);
+
+  /* ===================== SPACING & LAYOUT ===================== */
+  --space-0:  0;
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+
+  --container-sm: 640px;
+  --container-md: 880px;
+  --container-lg: 1140px;
+  --container-xl: 1320px;
+
+  --z-base:    0;
+  --z-raised:  10;
+  --z-sticky:  100;
+  --z-overlay: 1000;
+  --z-modal:   1100;
+  --z-toast:   1200;
+
+  /* ===================== EFFECTS ===================== */
+
+  /* Corner radii */
+  --radius-xs:   2px;
+  --radius-sm:   3px;
+  --radius-md:   5px;
+  --radius-lg:   8px;
+  --radius-xl:   12px;
+  --radius-pill: 999px;
+
+  /* Border widths */
+  --border-thin:  1px;
+  --border-base:  2px;
+  --border-thick: 3px;
+
+  /* Shadows */
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.5);
+  --shadow-md:  0 4px 10px rgba(0,0,0,0.55);
+  --shadow-lg:  0 12px 28px rgba(0,0,0,0.6);
+  --shadow-xl:  0 24px 60px rgba(0,0,0,0.7);
+
+  /* Inner bevel */
+  --bevel-in:    inset 0 1px 0 rgba(255,235,190,0.07), inset 0 -2px 4px rgba(0,0,0,0.45);
+  --bevel-raise: inset 0 1px 0 rgba(255,235,190,0.14), 0 2px 6px rgba(0,0,0,0.5);
+
+  /* Glows */
+  --glow-gold:  0 0 0 1px var(--gold-600), 0 0 14px rgba(200,163,91,0.45);
+  --glow-steel: 0 0 0 1px var(--steel-600), 0 0 14px rgba(91,143,176,0.5);
+  --glow-blood: 0 0 0 1px var(--blood-600), 0 0 14px rgba(176,58,54,0.5);
+  --focus-ring: 0 0 0 2px var(--obsidian-900), 0 0 0 4px var(--steel-500);
+
+  /* Gradients */
+  --grad-gold:   linear-gradient(180deg, var(--gold-400) 0%, var(--gold-600) 52%, var(--gold-700) 53%, var(--gold-500) 100%);
+  --grad-steel:  linear-gradient(180deg, var(--steel-400) 0%, var(--steel-600) 52%, var(--steel-700) 53%, var(--steel-500) 100%);
+  --grad-iron:   linear-gradient(180deg, var(--obsidian-500) 0%, var(--obsidian-700) 100%);
+  --grad-panel:  linear-gradient(180deg, var(--obsidian-600) 0%, var(--obsidian-800) 100%);
+  --grad-blood:  linear-gradient(180deg, var(--blood-500) 0%, var(--blood-700) 100%);
+
+  /* Vignette */
+  --vignette: radial-gradient(120% 100% at 50% 0%, transparent 40%, rgba(10,8,5,0.85) 100%);
+
+  /* Motion */
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-snap:   cubic-bezier(0.5, 1.6, 0.4, 1);
+  --dur-fast:    120ms;
+  --dur-base:    220ms;
+  --dur-slow:    420ms;
+}
+
+/* ============================================================
+   Tailwind v4 theme mapping — exposes the most-used tokens as
+   utilities (bg-gold-500, text-parchment-200, font-display…).
+   Gradients, shadows, glows and bevels stay as CSS vars used
+   via arbitrary values / inline styles.
+   ============================================================ */
+@theme inline {
+  --color-obsidian-900: var(--obsidian-900);
+  --color-obsidian-800: var(--obsidian-800);
+  --color-obsidian-700: var(--obsidian-700);
+  --color-obsidian-600: var(--obsidian-600);
+  --color-obsidian-500: var(--obsidian-500);
+  --color-iron-400: var(--iron-400);
+  --color-iron-300: var(--iron-300);
+  --color-iron-200: var(--iron-200);
+
+  --color-parchment-50:  var(--parchment-50);
+  --color-parchment-100: var(--parchment-100);
+  --color-parchment-200: var(--parchment-200);
+  --color-parchment-300: var(--parchment-300);
+  --color-parchment-400: var(--parchment-400);
+
+  --color-gold-800: var(--gold-800);
+  --color-gold-700: var(--gold-700);
+  --color-gold-600: var(--gold-600);
+  --color-gold-500: var(--gold-500);
+  --color-gold-400: var(--gold-400);
+  --color-gold-300: var(--gold-300);
+
+  --color-steel-700: var(--steel-700);
+  --color-steel-600: var(--steel-600);
+  --color-steel-500: var(--steel-500);
+  --color-steel-400: var(--steel-400);
+  --color-steel-300: var(--steel-300);
+
+  --color-blood-800: var(--blood-800);
+  --color-blood-700: var(--blood-700);
+  --color-blood-600: var(--blood-600);
+  --color-blood-500: var(--blood-500);
+  --color-blood-400: var(--blood-400);
+
+  --color-emerald-700: var(--emerald-700);
+  --color-emerald-600: var(--emerald-600);
+  --color-emerald-500: var(--emerald-500);
+  --color-emerald-400: var(--emerald-400);
+
+  --color-amethyst-600: var(--amethyst-600);
+  --color-amethyst-500: var(--amethyst-500);
+  --color-amethyst-400: var(--amethyst-400);
+
+  --font-display: var(--font-cinzel), "Times New Roman", serif;
+  --font-hero:    var(--font-cinzel-dec), var(--font-cinzel), serif;
+  --font-body:    var(--font-spectral), Georgia, serif;
+  --font-ui:      var(--font-oswald), "Arial Narrow", sans-serif;
+  --font-mono:    var(--font-jetbrains), monospace;
+}
+
+/* ============================================================
+   Base resets & atmosphere (from base.css)
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background-color: var(--surface-base);
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(255,235,190,0.025), transparent 60%),
+    radial-gradient(1px 1px at 70% 60%, rgba(255,235,190,0.02), transparent 60%),
+    radial-gradient(1200px 600px at 50% -10%, rgba(91,143,176,0.06), transparent 70%);
+  color: var(--text-body);
+  font: var(--type-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4 {
+  color: var(--text-heading);
+  font-family: var(--font-display);
+  line-height: var(--leading-tight);
+  margin: 0;
+}
+
+a { color: var(--link); text-decoration: none; transition: color var(--dur-fast) var(--ease-out); }
+a:hover { color: var(--link-hover); }
+
+::selection { background: var(--gold-600); color: var(--obsidian-900); }
+
+/* Themed scrollbar */
+* { scrollbar-width: thin; scrollbar-color: var(--iron-400) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb {
+  background: var(--iron-400);
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--surface-base);
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--iron-300); }
+
+/* ---- Reusable atmosphere helpers ---- */
+
+.wyd-parchment {
+  background-color: var(--surface-parchment);
+  background-image:
+    radial-gradient(120% 140% at 0% 0%, rgba(173,147,98,0.18), transparent 55%),
+    radial-gradient(120% 140% at 100% 100%, rgba(110,82,31,0.16), transparent 55%);
+  color: var(--text-on-parchment);
+  border: var(--border-thin) solid var(--parchment-400);
+  border-radius: var(--radius-md);
+}
+
+.wyd-divider {
+  display: flex; align-items: center; gap: var(--space-3);
+  color: var(--gold-600);
+}
+.wyd-divider::before, .wyd-divider::after {
+  content: ""; flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-600), transparent);
+}
+.wyd-divider span {
+  font-family: var(--font-ui); text-transform: uppercase;
+  letter-spacing: var(--tracking-widest); font-size: var(--text-xs);
+}
+
+.wyd-eyebrow {
+  font-family: var(--font-ui); text-transform: uppercase;
+  letter-spacing: var(--tracking-widest); font-size: var(--text-xs);
+  font-weight: var(--weight-medium); color: var(--gold-500);
+}
+
+/* Screen entrance — short rise + fade, honoring reduced-motion */
+.wyd-screen { animation: wydFade 0.42s var(--ease-out) both; }
+@keyframes wydFade {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  .wyd-screen { animation: none; }
+}
+
+/* ============================================================
+   Component interaction states
+   (hover / press / focus can't be expressed with inline styles)
+   ============================================================ */
+
+/* ---- Button ---- */
+.wyd-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: var(--font-ui); font-weight: 600;
+  text-transform: uppercase; letter-spacing: var(--tracking-wide);
+  border-radius: var(--radius-md); border: 1px solid transparent;
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+  transition: transform var(--dur-fast) var(--ease-snap),
+    box-shadow var(--dur-fast) var(--ease-out),
+    filter var(--dur-fast) var(--ease-out);
+}
+.wyd-btn--sm { padding: 7px 14px; font-size: var(--text-xs); }
+.wyd-btn--md { padding: 11px 20px; font-size: var(--text-sm); }
+.wyd-btn--lg { padding: 14px 26px; font-size: var(--text-base); }
+.wyd-btn--block { display: flex; width: 100%; }
+
+.wyd-btn--primary {
+  background: var(--grad-gold); color: var(--obsidian-900);
+  border-color: var(--gold-700); box-shadow: var(--bevel-raise);
+}
+.wyd-btn--steel {
+  background: var(--grad-steel); color: var(--obsidian-900);
+  border-color: var(--steel-700); box-shadow: var(--bevel-raise);
+}
+.wyd-btn--ghost {
+  background: transparent; color: var(--gold-300);
+  border-color: var(--iron-300);
+}
+.wyd-btn:not(:disabled):hover { filter: brightness(1.08); box-shadow: var(--bevel-raise), var(--shadow-md); }
+.wyd-btn--ghost:not(:disabled):hover { border-color: var(--gold-600); color: var(--gold-200); box-shadow: var(--glow-gold); }
+.wyd-btn:not(:disabled):active { transform: translateY(1px); box-shadow: var(--bevel-in); }
+.wyd-btn:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.3); }
+.wyd-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+/* ---- Input ---- */
+.wyd-input {
+  width: 100%; font-family: var(--font-body); font-size: var(--text-base);
+  color: var(--parchment-100); background: var(--surface-inset);
+  border: 1px solid var(--iron-400); border-radius: var(--radius-sm);
+  box-shadow: var(--bevel-in); padding: 11px 13px;
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.wyd-input::placeholder { color: var(--text-faint); }
+.wyd-input:focus { outline: none; border-color: var(--steel-600); box-shadow: var(--bevel-in), var(--glow-steel); }
+
+/* ---- Nav / tab buttons (used inline in client components) ---- */
+.wyd-navlink:hover { color: var(--gold-300); }
