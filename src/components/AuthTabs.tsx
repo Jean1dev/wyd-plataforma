@@ -5,6 +5,17 @@ import { useRouter } from "next/navigation";
 import { Button, Input, Checkbox } from "@/components/ui";
 
 type Mode = "login" | "register";
+type FormStatus = "idle" | "submitting";
+
+const errorMessages: Record<string, string> = {
+  blocked: "Esta conta esta bloqueada.",
+  invalid_credentials: "Usuario ou senha invalidos.",
+  invalid_input: "Confira usuario, senha e e-mail.",
+  name_taken: "Este usuario ja esta em uso.",
+  password_mismatch: "As senhas nao conferem.",
+  terms_required: "Aceite os termos para criar a conta.",
+  service_unavailable: "Servico indisponivel. Tente novamente em instantes.",
+};
 
 function tabStyle(active: boolean): React.CSSProperties {
   return {
@@ -24,12 +35,52 @@ function tabStyle(active: boolean): React.CSSProperties {
 
 export function AuthTabs() {
   const [mode, setMode] = useState<Mode>("login");
+  const [status, setStatus] = useState<FormStatus>("idle");
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const isRegister = mode === "register";
 
-  function enter(e: React.FormEvent) {
+  async function enter(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setError(null);
+
+    const form = new FormData(e.currentTarget);
+    const password = String(form.get("password") ?? "");
+
+    if (isRegister) {
+      const passwordConfirm = String(form.get("passwordConfirm") ?? "");
+      if (password !== passwordConfirm) {
+        setError("password_mismatch");
+        return;
+      }
+
+      if (form.get("terms") !== "on") {
+        setError("terms_required");
+        return;
+      }
+    }
+
+    setStatus("submitting");
+    const response = await fetch(isRegister ? "/api/signup" : "/api/login", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name: form.get("name"),
+        password,
+        email: isRegister ? form.get("email") : undefined,
+      }),
+    }).catch(() => null);
+
+    setStatus("idle");
+
+    if (!response?.ok) {
+      const payload = (await response?.json().catch(() => null)) as { error?: string } | null;
+      setError(payload?.error ?? "service_unavailable");
+      return;
+    }
+
     router.push("/dashboard");
+    router.refresh();
   }
 
   return (
@@ -58,13 +109,13 @@ export function AuthTabs() {
       </div>
 
       <form onSubmit={enter} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <Input label="Usuário" name="user" placeholder="seu_login" autoComplete="username" />
+        <Input label="Usuario" name="name" placeholder="seu_login" autoComplete="username" required minLength={4} maxLength={12} pattern="[A-Za-z0-9]+" />
         {isRegister ? (
           <Input label="E-mail" name="email" type="email" placeholder="voce@email.com" autoComplete="email" />
         ) : null}
-        <Input label="Senha" name="pass" type="password" placeholder="••••••••" autoComplete="current-password" />
+        <Input label="Senha" name="password" type="password" placeholder="********" autoComplete={isRegister ? "new-password" : "current-password"} required minLength={4} />
         {isRegister ? (
-          <Input label="Confirmar Senha" name="pass2" type="password" placeholder="••••••••" autoComplete="new-password" />
+          <Input label="Confirmar Senha" name="passwordConfirm" type="password" placeholder="********" autoComplete="new-password" required minLength={4} />
         ) : null}
 
         {isRegister ? (
@@ -78,8 +129,25 @@ export function AuthTabs() {
           </div>
         )}
 
-        <Button type="submit" size="lg" block>
-          {isRegister ? "Forjar minha lenda" : "Entrar no Reino"}
+        {error ? (
+          <div
+            role="alert"
+            style={{
+              border: "1px solid rgba(199, 74, 74, 0.55)",
+              background: "rgba(88, 24, 24, 0.35)",
+              borderRadius: "var(--radius-sm)",
+              color: "#ffd6cf",
+              fontFamily: "var(--font-body)",
+              fontSize: 13,
+              padding: "10px 12px",
+            }}
+          >
+            {errorMessages[error] ?? errorMessages.service_unavailable}
+          </div>
+        ) : null}
+
+        <Button type="submit" size="lg" block disabled={status === "submitting"}>
+          {status === "submitting" ? "Aguarde..." : isRegister ? "Forjar minha lenda" : "Entrar no Reino"}
         </Button>
         <div className="wyd-divider">
           <span>ou</span>

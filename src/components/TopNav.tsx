@@ -6,9 +6,26 @@ import { usePathname, useRouter } from "next/navigation";
 import { Avatar } from "@/components/ui";
 import { NAV_LINKS, COIN_BALANCE } from "@/lib/portal-data";
 
-export function TopNav() {
+type TopNavProps = {
+  userName: string;
+};
+
+function initials(name: string) {
+  return name
+    .slice(0, 2)
+    .toUpperCase()
+    .padEnd(2, "?");
+}
+
+export function TopNav({ userName }: TopNavProps) {
   const pathname = usePathname();
   const router = useRouter();
+
+  async function logout() {
+    await fetch("/api/logout", { method: "POST" }).catch(() => null);
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <header
@@ -112,7 +129,7 @@ export function TopNav() {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-            <Avatar initials="DG" size={36} ring="var(--gold-600)" />
+            <Avatar initials={initials(userName)} size={36} ring="var(--gold-600)" />
             <div style={{ lineHeight: 1.2 }}>
               <div
                 style={{
@@ -122,7 +139,7 @@ export function TopNav() {
                   fontWeight: 600,
                 }}
               >
-                DragonGM
+                {userName}
               </div>
               <div
                 style={{
@@ -141,7 +158,7 @@ export function TopNav() {
           <button
             type="button"
             title="Sair"
-            onClick={() => router.push("/")}
+            onClick={logout}
             style={{
               background: "transparent",
               border: "1px solid var(--iron-400)",
