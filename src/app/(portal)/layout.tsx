@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth/session";
+import { getSession, isModerator } from "@/lib/auth/session";
 import { TopNav } from "@/components/TopNav";
 
 // Protected routes must read the encrypted session cookie before rendering.
@@ -15,7 +15,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
 
   return (
     <div>
-      <TopNav userName={session.name ?? "Jogador"} />
+      <TopNav userName={session.name ?? "Jogador"} isModerator={isModerator(session)} />
       <main>{children}</main>
     </div>
   );

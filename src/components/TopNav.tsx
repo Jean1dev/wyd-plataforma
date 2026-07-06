@@ -8,6 +8,7 @@ import { NAV_LINKS, COIN_BALANCE } from "@/lib/portal-data";
 
 type TopNavProps = {
   userName: string;
+  isModerator?: boolean;
 };
 
 function initials(name: string) {
@@ -17,9 +18,13 @@ function initials(name: string) {
     .padEnd(2, "?");
 }
 
-export function TopNav({ userName }: TopNavProps) {
+export function TopNav({ userName, isModerator = false }: TopNavProps) {
   const pathname = usePathname();
   const router = useRouter();
+
+  const navLinks = isModerator
+    ? [...NAV_LINKS, { href: "/admin/npcs", label: "Admin" } as const]
+    : NAV_LINKS;
 
   async function logout() {
     await fetch("/api/logout", { method: "POST" }).catch(() => null);
@@ -77,8 +82,8 @@ export function TopNav({ userName }: TopNavProps) {
         </Link>
 
         <nav style={{ display: "flex", gap: 4, flex: 1, flexWrap: "wrap" }}>
-          {NAV_LINKS.map((l) => {
-            const active = pathname === l.href;
+          {navLinks.map((l) => {
+            const active = pathname === l.href || pathname.startsWith(`${l.href}/`);
             return (
               <Link
                 key={l.href}

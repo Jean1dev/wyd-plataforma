@@ -1,0 +1,42 @@
+import { NextResponse } from "next/server";
+import { assertSameOrigin, requireModerator } from "@/lib/auth/require-moderator";
+import { httpForAdminResult, upstreamError } from "@/lib/web-api/admin-http";
+import { npcAdminRpc } from "@/lib/web-api/npc-admin-client";
+import { parseUpsertBody } from "./upsert";
+
+export async function GET() {
+  const guard = await requireModerator();
+  if (!guard.ok) return guard.response;
+
+  let resp;
+  try {
+    resp = await npcAdminRpc("ListNpcs", { moderator_id: guard.moderatorId });
+  } catch {
+    return upstreamError();
+  }
+
+  const status = httpForAdminResult(resp.result);
+  if (status !== 200) return NextResponse.json({ result: resp.result }, { status });
+  return NextResponse.json({ npcs: resp.npcs });
+}
+
+export async function POST(req: Request) {
+  const guard = await requireModerator();
+  if (!guard.ok) return guard.response;
+  const bad = await assertSameOrigin();
+  if (bad) return bad;
+
+  const parsed = parseUpsertBody(await req.json().catch(() => null));
+  if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 422 });
+
+  let resp;
+  try {
+    resp = await npcAdminRpc("UpsertNpc", { moderator_id: guard.moderatorId, ...parsed.value });
+  } catch {
+    return upstreamError();
+  }
+
+  const status = httpForAdminResult(resp.result);
+  if (status !== 200) return NextResponse.json({ result: resp.result }, { status });
+  return NextResponse.json({ npc_id: resp.npc_id });
+}

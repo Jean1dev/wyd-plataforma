@@ -7,7 +7,17 @@ export type SessionData = {
   accountId?: string;
   name?: string;
   isLoggedIn?: boolean;
+  // Account role as reported by the web-api at login ("player" | "moderator" |
+  // "admin"). Used only to gate the moderation UI; the web-api stays the
+  // authority on authorization.
+  role?: string;
 };
+
+const MODERATOR_ROLES = new Set(["moderator", "admin"]);
+
+export function isModerator(session: Pick<SessionData, "role">): boolean {
+  return session.role != null && MODERATOR_ROLES.has(session.role);
+}
 
 const devPassword = "wyd-plataforma-dev-session-password-change-me";
 

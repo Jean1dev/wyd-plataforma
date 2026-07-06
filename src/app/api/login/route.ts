@@ -35,6 +35,7 @@ export async function POST(req: Request) {
   session.accountId = res.account_id;
   session.name = name;
   session.isLoggedIn = true;
+  session.role = res.role;
   await session.save();
 
   return NextResponse.json({ ok: true });

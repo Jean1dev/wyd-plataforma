@@ -1,9 +1,7 @@
 import "server-only";
 
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import * as grpc from "@grpc/grpc-js";
-import * as protoLoader from "@grpc/proto-loader";
+import { channelOptions, credentials, webApiAddress, webProtoPackage } from "./channel";
 
 type AccountClient = {
   CreateAccount(
@@ -36,6 +34,7 @@ export type VerifyCredentialsResponse = {
   ok: boolean;
   account_id: string;
   blocked: boolean;
+  role: string;
 };
 
 type WebProto = {
@@ -50,55 +49,13 @@ type WebProto = {
   };
 };
 
-const pkgDef = protoLoader.loadSync(path.join(process.cwd(), "proto/web.proto"), {
-  keepCase: true,
-  longs: String,
-  enums: String,
-  defaults: true,
-});
-
-const proto = grpc.loadPackageDefinition(pkgDef) as unknown as WebProto;
-
-function credentials(): grpc.ChannelCredentials {
-  if (process.env.WEB_API_INSECURE === "1") {
-    return grpc.credentials.createInsecure();
-  }
-
-  // mTLS only when a client cert is configured (direct link to webserver, e.g.
-  // local docker-compose.mtls). Behind Railway's public HTTPS edge there's no
-  // client cert to present — the edge terminates TLS with its own public cert.
-  if (process.env.WEB_API_CA || process.env.WEB_API_CLIENT_KEY || process.env.WEB_API_CLIENT_CRT) {
-    return grpc.credentials.createSsl(
-      readFileSync(requiredEnv("WEB_API_CA")),
-      readFileSync(requiredEnv("WEB_API_CLIENT_KEY")),
-      readFileSync(requiredEnv("WEB_API_CLIENT_CRT")),
-    );
-  }
-
-  return grpc.credentials.createSsl();
-}
-
-function requiredEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return value;
-}
+const proto = webProtoPackage as unknown as WebProto;
 
 let client: AccountClient | undefined;
 
 export function accountClient(): AccountClient {
   if (!client) {
-    const options: grpc.ChannelOptions = process.env.WEB_API_SERVER_NAME
-      ? { "grpc.ssl_target_name_override": process.env.WEB_API_SERVER_NAME }
-      : {};
-
-    client = new proto.web.v1.AccountWebService(
-      process.env.WEB_API_ADDR ?? "localhost:7600",
-      credentials(),
-      options,
-    );
+    client = new proto.web.v1.AccountWebService(webApiAddress(), credentials(), channelOptions());
   }
 
   return client;
