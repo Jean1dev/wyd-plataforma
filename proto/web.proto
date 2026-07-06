@@ -34,4 +34,115 @@ message VerifyCredentialsResponse {
   bool ok = 1;
   int64 account_id = 2;
   bool blocked = 3;
+  // Account role: "player", "moderator" or "admin". Used by the BFF to gate the
+  // moderation UI. The web-api remains the authority on authorization.
+  string role = 4;
+}
+
+// NpcAdminService lets moderators edit the cold NPC config (visibility,
+// position and shop/price). The web-api is the authority on authorization and
+// validation. Business outcomes travel in the body via AdminResult; only
+// infrastructure failures become gRPC errors.
+service NpcAdminService {
+  rpc ListNpcs(ListNpcsRequest) returns (ListNpcsResponse);
+  rpc GetNpc(GetNpcRequest) returns (GetNpcResponse);
+  rpc UpsertNpc(UpsertNpcRequest) returns (UpsertNpcResponse);
+  rpc SetNpcVisibility(SetNpcVisibilityRequest) returns (AdminAck);
+  rpc SetNpcShop(SetNpcShopRequest) returns (AdminAck);
+  rpc SetItemPrice(SetItemPriceRequest) returns (AdminAck);
+  rpc DeleteNpc(DeleteNpcRequest) returns (AdminAck);
+}
+
+enum AdminResult {
+  ADMIN_RESULT_UNSPECIFIED = 0;
+  ADMIN_RESULT_OK = 1;
+  ADMIN_RESULT_FORBIDDEN = 2;
+  ADMIN_RESULT_INVALID = 3;
+  ADMIN_RESULT_NOT_FOUND = 4;
+}
+
+message AdminNpc {
+  int64  id            = 1;  // numeric id of the definition (use in npc_id)
+  string slug          = 2;  // stable human key (e.g. "Karkarian-42")
+  string template_name = 3;  // template file under Release/TMsrv/run/npc/
+  string display_name  = 4;
+  bool   enabled       = 5;  // "shows up or not"
+  int32  map_id        = 6;  // loaded, but the game positions only by x/y
+  int32  pos_x         = 7;  // spawn point
+  int32  pos_y         = 8;
+  int32  route_type    = 9;  // 0 = idle
+  int32  merchant      = 10; // 0 non-merchant, 1 shop, 2 storage, 19 shop3, 100 quest
+  repeated AdminNpcShopItem shop = 11; // filled in GetNpc/ListNpcs
+}
+
+message AdminNpcShopItem {
+  int32 slot       = 1;  // shop display slot 0..26 (3 tabs of 9)
+  int32 item_index = 2;  // index in ItemList (> 0)
+  int32 eff1 = 3; int32 effv1 = 4;  // optional effects (0 = none)
+  int32 eff2 = 5; int32 effv2 = 6;
+  int32 eff3 = 7; int32 effv3 = 8;
+}
+
+message ListNpcsRequest {
+  int64 moderator_id = 1;
+}
+
+message ListNpcsResponse {
+  AdminResult result = 1;
+  repeated AdminNpc npcs = 2;
+}
+
+message GetNpcRequest {
+  int64 moderator_id = 1;
+  int64 npc_id = 2;
+}
+
+message GetNpcResponse {
+  AdminResult result = 1;
+  AdminNpc npc = 2;
+}
+
+message UpsertNpcRequest {
+  int64  moderator_id = 1;
+  string slug         = 2;
+  string template_name = 3;
+  string display_name = 4;
+  bool   enabled      = 5;
+  int32  map_id       = 6;
+  int32  pos_x        = 7;
+  int32  pos_y        = 8;
+  int32  route_type   = 9;
+  int32  merchant     = 10;
+}
+
+message UpsertNpcResponse {
+  AdminResult result = 1;
+  int64 npc_id = 2;
+}
+
+message SetNpcVisibilityRequest {
+  int64 moderator_id = 1;
+  int64 npc_id = 2;
+  bool  enabled = 3;
+}
+
+message SetNpcShopRequest {
+  int64 moderator_id = 1;
+  int64 npc_id = 2;
+  repeated AdminNpcShopItem items = 3;
+}
+
+message SetItemPriceRequest {
+  int64 moderator_id = 1;
+  int32 item_index = 2;
+  int64 price = 3;  // >= 0 sets the global price; < 0 clears the override
+}
+
+message DeleteNpcRequest {
+  int64 moderator_id = 1;
+  int64 npc_id = 2;
+}
+
+message AdminAck {
+  AdminResult result = 1;
 }

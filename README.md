@@ -20,6 +20,15 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Moderação de NPCs (BFF)
+
+O portal expõe uma área de moderação (`/admin/npcs`) que edita NPCs via o
+`web-api` (gRPC+mTLS, `web.v1.NpcAdminService`). O Next.js atua como BFF: o
+browser fala REST com as rotas em `src/app/api/admin/*`, que derivam o
+`moderator_id` do cookie de sessão. Detalhes de contrato, rotas, variáveis de
+ambiente e pré-requisitos operacionais estão em
+[`docs/admin-npc-editing.md`](docs/admin-npc-editing.md).
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
