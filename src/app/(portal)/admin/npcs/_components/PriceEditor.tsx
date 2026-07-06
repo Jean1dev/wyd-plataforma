@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Button, Input } from "@/components/ui";
 import { Combobox, type ComboOption } from "./Combobox";
+import { PickerNote } from "./PickerNote";
 import { useItemCatalog } from "./catalog";
 import { errorMessage, PROPAGATION_NOTICE, setItemPrice } from "./api";
 
@@ -72,6 +73,14 @@ export function PriceEditor() {
           manualInputMode="numeric"
           manualHint="Índice no ItemList do jogo (> 0)."
         />
+        {!catalog.loading ? (
+          <PickerNote
+            status={catalog.status}
+            rpc="ListItemCatalog"
+            contentDependent
+            manualHint="Digite o item_index manualmente (índice do ItemList.csv, > 0)."
+          />
+        ) : null}
       </div>
 
       <Input

@@ -51,3 +51,11 @@ export type MapZone = {
   id: number;
   name: string;
 };
+
+// Outcome of a form-picker lookup, so the UI can explain WHY a picker is missing
+// instead of silently showing a blank manual field:
+//  - "ok"          → non-empty list, render the picker
+//  - "empty"       → RPC returned OK but empty (web-api started without -content)
+//  - "unavailable" → gRPC/HTTP failure (web-api down, or RPC not implemented yet)
+export type LookupStatus = "ok" | "empty" | "unavailable";
+export type LookupResult<T> = { status: LookupStatus; data: T[] };

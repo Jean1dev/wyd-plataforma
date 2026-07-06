@@ -4,17 +4,18 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Checkbox, Input } from "@/components/ui";
 import { MERCHANT_TYPES } from "@/lib/npc/domain";
-import type { AdminNpc, MapZone, MerchantTemplate } from "@/lib/npc/types";
+import type { AdminNpc, LookupResult, MapZone, MerchantTemplate } from "@/lib/npc/types";
 import { Combobox, type ComboOption } from "./Combobox";
+import { PickerNote } from "./PickerNote";
 import { createNpc, errorMessage, PROPAGATION_NOTICE, updateNpc, type UpsertPayload } from "./api";
 
 type Props = {
   /** When present, the form edits an existing definition; otherwise it creates. */
   npc?: AdminNpc;
-  /** Merchant templates for the template_name picker; empty → manual field. */
-  templates: MerchantTemplate[];
-  /** City zones for the map_id select; empty → manual numeric field. */
-  zones: MapZone[];
+  /** Merchant templates for the template_name picker; non-ok → manual field + note. */
+  templates: LookupResult<MerchantTemplate>;
+  /** City zones for the map_id select; non-ok → manual numeric field + note. */
+  zones: LookupResult<MapZone>;
 };
 
 function num(v: string): number {
@@ -38,14 +39,17 @@ export function NpcForm({ npc, templates, zones }: Props) {
 
   const templateOptions: ComboOption[] = useMemo(
     () =>
-      templates.map((t) => ({
+      templates.data.map((t) => ({
         value: t.template_name,
         label: t.display_name || t.template_name,
         hint: t.template_name,
       })),
     [templates],
   );
-  const templateByName = useMemo(() => new Map(templates.map((t) => [t.template_name, t])), [templates]);
+  const templateByName = useMemo(
+    () => new Map(templates.data.map((t) => [t.template_name, t])),
+    [templates],
+  );
 
   const [form, setForm] = useState<UpsertPayload>({
     slug: npc?.slug ?? "",
@@ -115,31 +119,39 @@ export function NpcForm({ npc, templates, zones }: Props) {
         />
       </div>
 
-      <Combobox
-        label="Template (merchant)"
-        value={form.template_name}
-        onChange={(v) => set("template_name", v)}
-        onSelect={(opt) => {
-          const t = templateByName.get(opt.value);
-          if (t) set("merchant", t.merchant); // suggest merchant; still editable below
-        }}
-        options={templateOptions}
-        available={templateOptions.length > 0}
-        placeholder="Buscar template por nome…"
-        manualPlaceholder="ex. merchant_karkarian"
-        manualHint="Deve bater exatamente com um arquivo em Release/TMsrv/run/npc/ (sem .txt)."
-      />
+      <div style={{ display: "grid", gap: 8 }}>
+        <Combobox
+          label="Template (merchant)"
+          value={form.template_name}
+          onChange={(v) => set("template_name", v)}
+          onSelect={(opt) => {
+            const t = templateByName.get(opt.value);
+            if (t) set("merchant", t.merchant); // suggest merchant; still editable below
+          }}
+          options={templateOptions}
+          available={templates.status === "ok"}
+          placeholder="Buscar template por nome…"
+          manualPlaceholder="ex. merchant_karkarian"
+          manualHint="Deve bater exatamente com um arquivo em Release/TMsrv/run/npc/ (sem .txt)."
+        />
+        <PickerNote
+          status={templates.status}
+          rpc="ListMerchantTemplates"
+          contentDependent
+          manualHint="Digite o template_name manualmente — deve bater com um arquivo em Release/TMsrv/run/npc/ (sem .txt)."
+        />
+      </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
         <label style={field}>
           <span style={legend}>Cidade (map_id)</span>
-          {zones.length > 0 ? (
+          {zones.status === "ok" ? (
             <select style={selectStyle} value={form.map_id} onChange={(e) => set("map_id", num(e.target.value))}>
               {/* Keep an out-of-range existing value visible instead of silently snapping it. */}
-              {zones.some((z) => z.id === form.map_id) ? null : (
+              {zones.data.some((z) => z.id === form.map_id) ? null : (
                 <option value={form.map_id}>#{form.map_id} (fora da lista)</option>
               )}
-              {zones.map((z) => (
+              {zones.data.map((z) => (
                 <option key={z.id} value={z.id}>
                   {z.id} · {z.name}
                 </option>
@@ -157,6 +169,12 @@ export function NpcForm({ npc, templates, zones }: Props) {
         <Input label="Pos X" name="pos_x" type="number" value={form.pos_x} onChange={(e) => set("pos_x", num(e.target.value))} />
         <Input label="Pos Y" name="pos_y" type="number" value={form.pos_y} onChange={(e) => set("pos_y", num(e.target.value))} />
       </div>
+
+      <PickerNote
+        status={zones.status}
+        rpc="ListMapZones"
+        manualHint="Digite o map_id manualmente (0–4). Hoje é só rótulo — o spawn depende de Pos X/Y."
+      />
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
         <label style={field}>

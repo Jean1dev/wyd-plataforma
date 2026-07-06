@@ -5,6 +5,7 @@ import { Button } from "@/components/ui";
 import { merchantHasShop, SHOP_TABS } from "@/lib/npc/domain";
 import type { AdminNpc, AdminNpcShopItem } from "@/lib/npc/types";
 import { Combobox, type ComboOption } from "./Combobox";
+import { PickerNote } from "./PickerNote";
 import { useItemCatalog } from "./catalog";
 import { errorMessage, PROPAGATION_NOTICE, setShop, type ShopItemPayload } from "./api";
 
@@ -83,10 +84,13 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
         </div>
       ) : null}
 
-      {!catalog.loading && !catalog.available ? (
-        <div style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-muted)" }}>
-          Catálogo de itens indisponível — digite o <code>item_index</code> manualmente em cada slot.
-        </div>
+      {!catalog.loading ? (
+        <PickerNote
+          status={catalog.status}
+          rpc="ListItemCatalog"
+          contentDependent
+          manualHint="Digite o item_index manualmente em cada slot (índice do ItemList.csv, > 0)."
+        />
       ) : null}
 
       <div style={{ display: "flex", gap: 6 }}>

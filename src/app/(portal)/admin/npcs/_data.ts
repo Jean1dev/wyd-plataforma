@@ -2,7 +2,7 @@ import "server-only";
 
 import { getSession, isModerator } from "@/lib/auth/session";
 import { npcAdminRpc } from "@/lib/web-api/npc-admin-client";
-import type { AdminNpc, MapZone, MerchantTemplate } from "@/lib/npc/types";
+import type { AdminNpc, LookupResult, MapZone, MerchantTemplate } from "@/lib/npc/types";
 
 export type AdminDataResult<T> =
   | { status: "ok"; data: T }
@@ -52,29 +52,32 @@ export async function currentUserIsModerator(): Promise<boolean> {
   return (await moderatorId()) != null;
 }
 
-// Form pickers. These degrade gracefully: any non-OK result (including an empty
-// list when the web-api has no -content) returns [], and the form falls back to
-// a manual field. Templates/zones are small, so we fetch them server-side and
-// pass as props (no client loading state). The large item catalog is fetched
-// client-side instead (see _components/catalog.ts).
-export async function listMerchantTemplates(): Promise<MerchantTemplate[]> {
+// Form pickers. These degrade gracefully AND report why: the form falls back to
+// a manual field, but with an accurate reason ("empty" = web-api has no -content;
+// "unavailable" = RPC errored / not implemented). Templates/zones are small, so
+// we fetch them server-side and pass as props (no client loading state). The
+// large item catalog is fetched client-side instead (see _components/catalog.ts).
+export async function listMerchantTemplates(): Promise<LookupResult<MerchantTemplate>> {
   const id = await moderatorId();
-  if (!id) return [];
+  if (!id) return { status: "unavailable", data: [] };
   try {
     const resp = await npcAdminRpc("ListMerchantTemplates", { moderator_id: id });
-    return resp.result === "ADMIN_RESULT_OK" ? resp.templates : [];
+    if (resp.result !== "ADMIN_RESULT_OK") return { status: "unavailable", data: [] };
+    return { status: resp.templates.length > 0 ? "ok" : "empty", data: resp.templates };
   } catch {
-    return [];
+    return { status: "unavailable", data: [] };
   }
 }
 
-export async function listMapZones(): Promise<MapZone[]> {
+export async function listMapZones(): Promise<LookupResult<MapZone>> {
   const id = await moderatorId();
-  if (!id) return [];
+  if (!id) return { status: "unavailable", data: [] };
   try {
     const resp = await npcAdminRpc("ListMapZones", { moderator_id: id });
-    return resp.result === "ADMIN_RESULT_OK" ? resp.zones : [];
+    if (resp.result !== "ADMIN_RESULT_OK") return { status: "unavailable", data: [] };
+    // Zones are a fixed table — an empty list here means the RPC isn't really live.
+    return { status: resp.zones.length > 0 ? "ok" : "unavailable", data: resp.zones };
   } catch {
-    return [];
+    return { status: "unavailable", data: [] };
   }
 }
