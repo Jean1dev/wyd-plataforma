@@ -2,7 +2,7 @@ import "server-only";
 
 import { getSession, isModerator } from "@/lib/auth/session";
 import { npcAdminRpc } from "@/lib/web-api/npc-admin-client";
-import type { AdminNpc } from "@/lib/npc/types";
+import type { AdminNpc, MapZone, MerchantTemplate } from "@/lib/npc/types";
 
 export type AdminDataResult<T> =
   | { status: "ok"; data: T }
@@ -50,4 +50,31 @@ export async function getNpc(npcId: string): Promise<AdminDataResult<AdminNpc>> 
 
 export async function currentUserIsModerator(): Promise<boolean> {
   return (await moderatorId()) != null;
+}
+
+// Form pickers. These degrade gracefully: any non-OK result (including an empty
+// list when the web-api has no -content) returns [], and the form falls back to
+// a manual field. Templates/zones are small, so we fetch them server-side and
+// pass as props (no client loading state). The large item catalog is fetched
+// client-side instead (see _components/catalog.ts).
+export async function listMerchantTemplates(): Promise<MerchantTemplate[]> {
+  const id = await moderatorId();
+  if (!id) return [];
+  try {
+    const resp = await npcAdminRpc("ListMerchantTemplates", { moderator_id: id });
+    return resp.result === "ADMIN_RESULT_OK" ? resp.templates : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function listMapZones(): Promise<MapZone[]> {
+  const id = await moderatorId();
+  if (!id) return [];
+  try {
+    const resp = await npcAdminRpc("ListMapZones", { moderator_id: id });
+    return resp.result === "ADMIN_RESULT_OK" ? resp.zones : [];
+  } catch {
+    return [];
+  }
 }

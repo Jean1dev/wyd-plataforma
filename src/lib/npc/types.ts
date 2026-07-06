@@ -33,3 +33,21 @@ export type AdminNpc = {
   merchant: number;
   shop: AdminNpcShopItem[];
 };
+
+// Lookup entries that back the form pickers. Empty lists are valid (web-api
+// without -content) — the UI degrades to manual fields.
+export type MerchantTemplate = {
+  template_name: string;
+  display_name: string;
+  merchant: number;
+};
+
+export type ItemCatalogEntry = {
+  item_index: number;
+  name: string;
+};
+
+export type MapZone = {
+  id: number;
+  name: string;
+};

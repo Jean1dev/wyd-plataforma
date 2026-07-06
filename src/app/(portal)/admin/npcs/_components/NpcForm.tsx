@@ -1,15 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Checkbox, Input } from "@/components/ui";
 import { MERCHANT_TYPES } from "@/lib/npc/domain";
-import type { AdminNpc } from "@/lib/npc/types";
+import type { AdminNpc, MapZone, MerchantTemplate } from "@/lib/npc/types";
+import { Combobox, type ComboOption } from "./Combobox";
 import { createNpc, errorMessage, PROPAGATION_NOTICE, updateNpc, type UpsertPayload } from "./api";
 
 type Props = {
   /** When present, the form edits an existing definition; otherwise it creates. */
   npc?: AdminNpc;
+  /** Merchant templates for the template_name picker; empty → manual field. */
+  templates: MerchantTemplate[];
+  /** City zones for the map_id select; empty → manual numeric field. */
+  zones: MapZone[];
 };
 
 function num(v: string): number {
@@ -27,9 +32,20 @@ const selectStyle: React.CSSProperties = {
   fontSize: 14,
 };
 
-export function NpcForm({ npc }: Props) {
+export function NpcForm({ npc, templates, zones }: Props) {
   const router = useRouter();
   const editing = Boolean(npc);
+
+  const templateOptions: ComboOption[] = useMemo(
+    () =>
+      templates.map((t) => ({
+        value: t.template_name,
+        label: t.display_name || t.template_name,
+        hint: t.template_name,
+      })),
+    [templates],
+  );
+  const templateByName = useMemo(() => new Map(templates.map((t) => [t.template_name, t])), [templates]);
 
   const [form, setForm] = useState<UpsertPayload>({
     slug: npc?.slug ?? "",
@@ -99,17 +115,45 @@ export function NpcForm({ npc }: Props) {
         />
       </div>
 
-      <Input
-        label="Template (arquivo)"
-        name="template_name"
+      <Combobox
+        label="Template (merchant)"
         value={form.template_name}
-        onChange={(e) => set("template_name", e.target.value)}
-        placeholder="ex. merchant_karkarian.txt"
-        required
+        onChange={(v) => set("template_name", v)}
+        onSelect={(opt) => {
+          const t = templateByName.get(opt.value);
+          if (t) set("merchant", t.merchant); // suggest merchant; still editable below
+        }}
+        options={templateOptions}
+        available={templateOptions.length > 0}
+        placeholder="Buscar template por nome…"
+        manualPlaceholder="ex. merchant_karkarian"
+        manualHint="Deve bater exatamente com um arquivo em Release/TMsrv/run/npc/ (sem .txt)."
       />
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
-        <Input label="Mapa" name="map_id" type="number" value={form.map_id} onChange={(e) => set("map_id", num(e.target.value))} />
+        <label style={field}>
+          <span style={legend}>Cidade (map_id)</span>
+          {zones.length > 0 ? (
+            <select style={selectStyle} value={form.map_id} onChange={(e) => set("map_id", num(e.target.value))}>
+              {/* Keep an out-of-range existing value visible instead of silently snapping it. */}
+              {zones.some((z) => z.id === form.map_id) ? null : (
+                <option value={form.map_id}>#{form.map_id} (fora da lista)</option>
+              )}
+              {zones.map((z) => (
+                <option key={z.id} value={z.id}>
+                  {z.id} · {z.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="number"
+              value={form.map_id}
+              onChange={(e) => set("map_id", num(e.target.value))}
+              style={selectStyle}
+            />
+          )}
+        </label>
         <Input label="Pos X" name="pos_x" type="number" value={form.pos_x} onChange={(e) => set("pos_x", num(e.target.value))} />
         <Input label="Pos Y" name="pos_y" type="number" value={form.pos_y} onChange={(e) => set("pos_y", num(e.target.value))} />
       </div>

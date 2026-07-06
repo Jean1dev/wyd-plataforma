@@ -1,4 +1,4 @@
-import { currentUserIsModerator } from "../_data";
+import { currentUserIsModerator, listMapZones, listMerchantTemplates } from "../_data";
 import { NpcForm } from "../_components/NpcForm";
 import { AdminHeader, StateNotice } from "../_components/StateNotice";
 
@@ -13,10 +13,12 @@ export default async function NewNpcPage() {
     );
   }
 
+  const [templates, zones] = await Promise.all([listMerchantTemplates(), listMapZones()]);
+
   return (
     <div className="wyd-screen" style={wrap}>
       <AdminHeader eyebrow="Moderação" title="Novo NPC" />
-      <NpcForm />
+      <NpcForm templates={templates} zones={zones} />
     </div>
   );
 }

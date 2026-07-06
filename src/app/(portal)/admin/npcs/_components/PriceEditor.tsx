@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button, Input } from "@/components/ui";
+import { Combobox, type ComboOption } from "./Combobox";
+import { useItemCatalog } from "./catalog";
 import { errorMessage, PROPAGATION_NOTICE, setItemPrice } from "./api";
 
 // Global per-item price. There is no per-NPC price. Sending a negative price
@@ -11,6 +13,12 @@ export function PriceEditor() {
   const [price, setPrice] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+
+  const catalog = useItemCatalog();
+  const itemOptions: ComboOption[] = useMemo(
+    () => catalog.items.map((it) => ({ value: String(it.item_index), label: it.name, hint: `#${it.item_index}` })),
+    [catalog.items],
+  );
 
   async function submit(clear: boolean) {
     const idx = Number(itemIndex);
@@ -41,24 +49,39 @@ export function PriceEditor() {
 
   return (
     <div style={{ display: "grid", gap: 14, maxWidth: 480 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <Input
-          label="Item index"
-          name="item_index"
-          type="number"
+      <div style={{ display: "grid", gap: 6 }}>
+        <span
+          style={{
+            fontFamily: "var(--font-ui)",
+            fontSize: 11,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: "var(--text-muted)",
+          }}
+        >
+          Item
+        </span>
+        <Combobox
           value={itemIndex}
-          onChange={(e) => setItemIndex(e.target.value)}
-          placeholder="ex. 1024"
-        />
-        <Input
-          label="Preço (global)"
-          name="price"
-          type="number"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          placeholder="ex. 50000"
+          onChange={setItemIndex}
+          options={itemOptions}
+          available={catalog.available}
+          loading={catalog.loading}
+          placeholder="Buscar item por nome…"
+          manualPlaceholder="item_index (ex. 1024)"
+          manualInputMode="numeric"
+          manualHint="Índice no ItemList do jogo (> 0)."
         />
       </div>
+
+      <Input
+        label="Preço (global)"
+        name="price"
+        type="number"
+        value={price}
+        onChange={(e) => setPrice(e.target.value)}
+        placeholder="ex. 50000"
+      />
 
       <div style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-muted)" }}>
         O preço vale em <strong>todos</strong> os NPCs que vendem este item. Limpar override devolve o item ao

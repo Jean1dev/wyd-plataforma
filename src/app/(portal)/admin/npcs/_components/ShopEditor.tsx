@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui";
 import { merchantHasShop, SHOP_TABS } from "@/lib/npc/domain";
 import type { AdminNpc, AdminNpcShopItem } from "@/lib/npc/types";
+import { Combobox, type ComboOption } from "./Combobox";
+import { useItemCatalog } from "./catalog";
 import { errorMessage, PROPAGATION_NOTICE, setShop, type ShopItemPayload } from "./api";
 
 // item_index keyed by slot; 0/empty means "slot vazio". SetNpcShop replaces the
@@ -18,22 +20,17 @@ function initialSlots(shop: AdminNpcShopItem[]): SlotState {
   return state;
 }
 
-const cellInput: React.CSSProperties = {
-  width: "100%",
-  padding: "8px 10px",
-  background: "var(--surface-inset)",
-  border: "1px solid var(--iron-400)",
-  borderRadius: "var(--radius-sm)",
-  color: "var(--text-body)",
-  fontFamily: "var(--font-mono)",
-  fontSize: 13,
-};
-
 export function ShopEditor({ npc }: { npc: AdminNpc }) {
   const [slots, setSlots] = useState<SlotState>(() => initialSlots(npc.shop));
   const [tab, setTab] = useState(0);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+
+  const catalog = useItemCatalog();
+  const itemOptions: ComboOption[] = useMemo(
+    () => catalog.items.map((it) => ({ value: String(it.item_index), label: it.name, hint: `#${it.item_index}` })),
+    [catalog.items],
+  );
 
   const canSell = merchantHasShop(npc.merchant);
 
@@ -86,6 +83,12 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
         </div>
       ) : null}
 
+      {!catalog.loading && !catalog.available ? (
+        <div style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-muted)" }}>
+          Catálogo de itens indisponível — digite o <code>item_index</code> manualmente em cada slot.
+        </div>
+      ) : null}
+
       <div style={{ display: "flex", gap: 6 }}>
         {SHOP_TABS.map((t) => {
           const active = t.index === tab;
@@ -115,20 +118,22 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
         {slotList.map((slot) => (
-          <label key={slot} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <div key={slot} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <span style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--text-muted)" }}>
               Slot {slot}
             </span>
-            <input
-              type="number"
-              min={0}
-              inputMode="numeric"
-              placeholder="vazio"
+            <Combobox
+              compact
               value={slots[slot] ?? ""}
-              onChange={(e) => setSlot(slot, e.target.value)}
-              style={cellInput}
+              onChange={(v) => setSlot(slot, v)}
+              options={itemOptions}
+              available={catalog.available}
+              loading={catalog.loading}
+              placeholder="Buscar item…"
+              manualPlaceholder="vazio"
+              manualInputMode="numeric"
             />
-          </label>
+          </div>
         ))}
       </div>
 

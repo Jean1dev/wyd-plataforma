@@ -2,9 +2,23 @@ import "server-only";
 
 import * as grpc from "@grpc/grpc-js";
 import { channelOptions, credentials, webApiAddress, webProtoPackage } from "./channel";
-import type { AdminNpc, AdminNpcShopItem, AdminResult } from "@/lib/npc/types";
+import type {
+  AdminNpc,
+  AdminNpcShopItem,
+  AdminResult,
+  ItemCatalogEntry,
+  MapZone,
+  MerchantTemplate,
+} from "@/lib/npc/types";
 
-export type { AdminNpc, AdminNpcShopItem, AdminResult } from "@/lib/npc/types";
+export type {
+  AdminNpc,
+  AdminNpcShopItem,
+  AdminResult,
+  ItemCatalogEntry,
+  MapZone,
+  MerchantTemplate,
+} from "@/lib/npc/types";
 
 export type ListNpcsRequest = { moderator_id: string };
 export type ListNpcsResponse = { result: AdminResult; npcs: AdminNpc[] };
@@ -33,6 +47,11 @@ export type DeleteNpcRequest = { moderator_id: string; npc_id: string };
 
 export type AdminAck = { result: AdminResult };
 
+export type LookupRequest = { moderator_id: string };
+export type ListMerchantTemplatesResponse = { result: AdminResult; templates: MerchantTemplate[] };
+export type ListItemCatalogResponse = { result: AdminResult; items: ItemCatalogEntry[] };
+export type ListMapZonesResponse = { result: AdminResult; zones: MapZone[] };
+
 type Cb<R> = (err: grpc.ServiceError | null, res: R) => void;
 
 type NpcAdminClient = {
@@ -43,6 +62,9 @@ type NpcAdminClient = {
   SetNpcShop(req: SetNpcShopRequest, cb: Cb<AdminAck>): void;
   SetItemPrice(req: SetItemPriceRequest, cb: Cb<AdminAck>): void;
   DeleteNpc(req: DeleteNpcRequest, cb: Cb<AdminAck>): void;
+  ListMerchantTemplates(req: LookupRequest, cb: Cb<ListMerchantTemplatesResponse>): void;
+  ListItemCatalog(req: LookupRequest, cb: Cb<ListItemCatalogResponse>): void;
+  ListMapZones(req: LookupRequest, cb: Cb<ListMapZonesResponse>): void;
 };
 
 type WebProto = {
@@ -79,6 +101,9 @@ export function npcAdminRpc(method: "SetNpcVisibility", req: SetNpcVisibilityReq
 export function npcAdminRpc(method: "SetNpcShop", req: SetNpcShopRequest): Promise<AdminAck>;
 export function npcAdminRpc(method: "SetItemPrice", req: SetItemPriceRequest): Promise<AdminAck>;
 export function npcAdminRpc(method: "DeleteNpc", req: DeleteNpcRequest): Promise<AdminAck>;
+export function npcAdminRpc(method: "ListMerchantTemplates", req: LookupRequest): Promise<ListMerchantTemplatesResponse>;
+export function npcAdminRpc(method: "ListItemCatalog", req: LookupRequest): Promise<ListItemCatalogResponse>;
+export function npcAdminRpc(method: "ListMapZones", req: LookupRequest): Promise<ListMapZonesResponse>;
 export function npcAdminRpc(method: keyof NpcAdminClient, req: unknown): Promise<unknown> {
   const c = npcAdminClient();
 

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { getNpc } from "../_data";
+import { getNpc, listMapZones, listMerchantTemplates } from "../_data";
 import { NpcForm } from "../_components/NpcForm";
 import { ShopEditor } from "../_components/ShopEditor";
 import { PriceEditor } from "../_components/PriceEditor";
@@ -67,13 +67,14 @@ export default async function EditNpcPage({ params }: { params: Promise<{ id: st
   }
 
   const npc = result.data;
+  const [templates, zones] = await Promise.all([listMerchantTemplates(), listMapZones()]);
 
   return (
     <div className="wyd-screen" style={wrap}>
       <AdminHeader eyebrow="Moderação · NPC" title={npc.display_name || npc.slug} />
 
       <Section title="Definição" description="Posição, visibilidade e tipo do NPC.">
-        <NpcForm npc={npc} />
+        <NpcForm npc={npc} templates={templates} zones={zones} />
       </Section>
 
       <Section

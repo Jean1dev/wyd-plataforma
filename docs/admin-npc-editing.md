@@ -29,9 +29,34 @@ Browser ──HTTPS──> Next.js (Route Handlers = BFF)  ──gRPC+mTLS──
 | `PATCH /api/admin/npcs/:id/visibility` | `SetNpcVisibility` |
 | `PUT /api/admin/npcs/:id/shop` | `SetNpcShop` |
 | `PUT /api/admin/items/:index/price` | `SetItemPrice` |
+| `GET /api/admin/npc-templates` | `ListMerchantTemplates` |
+| `GET /api/admin/items` | `ListItemCatalog` |
+| `GET /api/admin/map-zones` | `ListMapZones` |
 
 `AdminResult` → HTTP: `OK`→200, `FORBIDDEN`→403, `INVALID`→422, `NOT_FOUND`→404,
 `UNSPECIFIED`→500. Rejeição de gRPC (falha de infra) → **502**.
+
+## Pickers do formulário (lookups)
+
+Para reduzir erro de digitação, o formulário usa três lookups read-only (todas
+escaneadas **uma vez no boot** do web-api, sem leitura de disco por request):
+
+- **`ListMerchantTemplates`** → combobox pesquisável de `template_name`. Ao
+  selecionar, preenche `template_name` (exato) e **sugere** o `merchant` (ainda
+  editável). `template_name` errado não dá erro ao salvar, mas o tmServer não
+  spawna o NPC — o picker elimina essa classe de bug.
+- **`ListItemCatalog`** → combobox pesquisável de `item_index` (loja e preço). O
+  catálogo é grande (~3200 itens): é carregado **uma vez** no client e
+  compartilhado entre todos os slots (`_components/catalog.ts`), filtrando
+  localmente.
+- **`ListMapZones`** → `<select>` das 5 cidades para `map_id` (tabela fixa; hoje
+  `map_id` é só rótulo, o mundo roda num grid único).
+
+**Degradação graciosa (importante):** `templates = []` e `items = []` são
+respostas **válidas** (`result = OK`) quando o `webserver` roda **sem**
+`-content`/`W2PP_CONTENT`. Nesse caso a UI cai no **campo manual** (texto /
+numérico) com aviso de validação — **não** é erro. `ListMapZones` nunca vem vazio
+(não depende de `-content`).
 
 ## Semântica de domínio
 
@@ -71,6 +96,12 @@ Browser ──HTTPS──> Next.js (Route Handlers = BFF)  ──gRPC+mTLS──
 3. **Seed dos NPCs** (uma vez): `dbserver import-npcs -content <Release/> -dsn <dsn>`.
    Antes disso, `ListNpcs` volta vazio.
 4. **Overlay no tmServer**: `W2PP_NPC_EDITING=true`.
+5. **Pickers (opcional, lado backend):** para os comboboxes de template e item
+   virem preenchidos, o **próprio `webserver`** precisa ser iniciado com
+   `-content <Release/>` (ou `W2PP_CONTENT`) — a mesma flag alimenta
+   `ListMerchantTemplates` **e** `ListItemCatalog`. Sem ela, ambas respondem
+   `OK` com lista vazia e a UI cai no campo manual (não é erro do Next.js).
+   `ListMapZones` não depende dessa flag.
 
 ## Gating da UI
 
