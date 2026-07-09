@@ -1,6 +1,8 @@
 import type { CSSProperties } from "react";
-import { Button, Stat, StatBar, Badge, Tag, ClassCrest } from "@/components/ui";
-import { CHARS, NEWS, SERVER_NAME, EXP_RATE } from "@/lib/portal-data";
+import { Button, Stat, StatBar, Badge, Tag, ClassCrest, type WydClass } from "@/components/ui";
+import { NEWS, SERVER_NAME, EXP_RATE } from "@/lib/portal-data";
+import { getSession } from "@/lib/auth/session";
+import { characterRpc, type CharacterSummary } from "@/lib/web-api/character-client";
 
 const panel: CSSProperties = {
   background: "var(--grad-panel)",
@@ -17,7 +19,42 @@ const sectionTitle: CSSProperties = {
   margin: 0,
 };
 
-export default function DashboardPage() {
+type CharactersState =
+  | { status: "ready"; characters: CharacterSummary[] }
+  | { status: "unavailable"; characters: [] };
+
+async function loadCharacters(): Promise<CharactersState> {
+  const session = await getSession();
+  if (!session.isLoggedIn || !session.accountId) return { status: "ready", characters: [] };
+
+  try {
+    const resp = await characterRpc("ListMyCharacters", { account_id: session.accountId });
+    return { status: "ready", characters: resp.characters ?? [] };
+  } catch {
+    return { status: "unavailable", characters: [] };
+  }
+}
+
+function characterClass(value: string): WydClass | null {
+  const normalized = value.trim().toLowerCase().replace(/[\s_-]/g, "");
+
+  if (normalized === "tk" || normalized === "transknight") return "TK";
+  if (normalized === "fm" || normalized === "foema") return "FM";
+  if (normalized === "bm" || normalized === "beastmaster") return "BM";
+  if (normalized === "ht" || normalized === "huntress") return "HT";
+  return null;
+}
+
+function numberText(value: string | number) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return String(value);
+  return new Intl.NumberFormat("pt-BR").format(n);
+}
+
+export default async function DashboardPage() {
+  const charactersState = await loadCharacters();
+  const characters = charactersState.characters;
+
   return (
     <div
       className="wyd-screen"
@@ -102,7 +139,7 @@ export default function DashboardPage() {
           <Stat label="Donate Coins" value="12.500" accent="var(--gold-300)" sub="saldo atual" />
         </div>
         <div style={{ ...panel, padding: 18 }}>
-          <Stat label="Personagens" value="3" accent="var(--steel-300)" sub="vinculados" />
+          <Stat label="Personagens" value={String(characters.length)} accent="var(--steel-300)" sub="vinculados" />
         </div>
         <div style={{ ...panel, padding: 18 }}>
           <Stat label="Próxima Guerra" value="02:14" accent="var(--blood-400)" sub="Torre de Cristal" />
@@ -117,9 +154,22 @@ export default function DashboardPage() {
             <h2 style={sectionTitle}>Meus Personagens</h2>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {CHARS.map((c) => (
+            {charactersState.status === "unavailable" ? (
+              <div style={{ ...panel, padding: 18, color: "var(--parchment-200)", fontFamily: "var(--font-body)" }}>
+                Não foi possível carregar seus personagens agora.
+              </div>
+            ) : null}
+            {charactersState.status === "ready" && characters.length === 0 ? (
+              <div style={{ ...panel, padding: 18, color: "var(--parchment-200)", fontFamily: "var(--font-body)" }}>
+                Nenhum personagem vinculado a esta conta.
+              </div>
+            ) : null}
+            {characters.map((c) => {
+              const cls = characterClass(c.class);
+
+              return (
               <div
-                key={c.name}
+                key={`${c.slot}-${c.name}`}
                 style={{
                   ...panel,
                   padding: 18,
@@ -129,7 +179,7 @@ export default function DashboardPage() {
                   flexWrap: "wrap",
                 }}
               >
-                <ClassCrest cls={c.cls} size="lg" />
+                {cls ? <ClassCrest cls={cls} size="lg" /> : <UnknownClassCrest label={c.class} />}
                 <div style={{ flex: "none", width: 130 }}>
                   <div
                     style={{
@@ -144,6 +194,17 @@ export default function DashboardPage() {
                   <Badge variant="gold" style={{ marginTop: 4 }}>
                     Nível {c.level}
                   </Badge>
+                  <div
+                    style={{
+                      marginTop: 6,
+                      fontFamily: "var(--font-ui)",
+                      fontSize: 11,
+                      color: "var(--text-faint)",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Slot {c.slot} · {c.class}
+                  </div>
                 </div>
                 <div
                   style={{
@@ -154,12 +215,25 @@ export default function DashboardPage() {
                     minWidth: 180,
                   }}
                 >
-                  <StatBar kind="hp" value={c.hp0} max={c.hp1} label="HP" />
-                  <StatBar kind="mp" value={c.mp0} max={c.mp1} label="MP" />
-                  <StatBar kind="exp" value={c.exp} max={100} label="EXP" />
+                  <StatBar kind="hp" value={c.hp} max={c.max_hp} label="HP" />
+                  <StatBar kind="mp" value={c.mp} max={c.max_mp} label="MP" />
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))",
+                      gap: 8,
+                      fontFamily: "var(--font-ui)",
+                      fontSize: 12,
+                      color: "var(--parchment-200)",
+                    }}
+                  >
+                    <span>EXP {numberText(c.exp)}</span>
+                    <span>Coins {numberText(c.coin)}</span>
+                  </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -221,6 +295,32 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function UnknownClassCrest({ label }: { label: string }) {
+  return (
+    <span
+      title={label}
+      style={{
+        width: 56,
+        height: 56,
+        flex: "none",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: "var(--radius-md)",
+        background: "var(--surface-inset)",
+        border: "1px solid var(--iron-300)",
+        boxShadow: "var(--bevel-in)",
+        color: "var(--steel-300)",
+        fontFamily: "var(--font-display)",
+        fontWeight: 700,
+        fontSize: 16,
+      }}
+    >
+      ?
+    </span>
   );
 }
 
