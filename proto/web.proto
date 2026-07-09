@@ -39,6 +39,37 @@ message VerifyCredentialsResponse {
   string role = 4;
 }
 
+// CharacterWebService exposes read-only character summaries for the logged-in
+// account. Live state remains owned by tmServer; this API reads persisted data.
+service CharacterWebService {
+  rpc ListMyCharacters(ListMyCharactersRequest) returns (ListMyCharactersResponse);
+}
+
+message ListMyCharactersRequest {
+  int64 account_id = 1;
+}
+
+message CharacterSummary {
+  int32 slot = 1;
+  string name = 2;
+  string class = 3;
+  int32 level = 4;
+  int64 exp = 5;
+  int64 coin = 6;
+  int32 hp = 7;
+  int32 max_hp = 8;
+  int32 mp = 9;
+  int32 max_mp = 10;
+  int32 strength = 11;
+  int32 intelligence = 12;
+  int32 dexterity = 13;
+  int32 constitution = 14;
+}
+
+message ListMyCharactersResponse {
+  repeated CharacterSummary characters = 1;
+}
+
 // NpcAdminService lets moderators edit the cold NPC config (visibility,
 // position and shop/price). The web-api is the authority on authorization and
 // validation. Business outcomes travel in the body via AdminResult; only
