@@ -1,8 +1,9 @@
 import type { CSSProperties } from "react";
-import { Button, Stat, StatBar, Badge, Tag, ClassCrest, type WydClass } from "@/components/ui";
+import { Button, Stat, StatBar, Badge, Tag } from "@/components/ui";
 import { NEWS, SERVER_NAME, EXP_RATE } from "@/lib/portal-data";
 import { getSession } from "@/lib/auth/session";
-import { characterRpc, type CharacterSummary } from "@/lib/web-api/character-client";
+import { characterRpc } from "@/lib/web-api/character-client";
+import { normalizeCharacterSummary, type CharacterSummaryView } from "@/lib/web-api/character-normalize";
 
 const panel: CSSProperties = {
   background: "var(--grad-panel)",
@@ -35,7 +36,7 @@ const statLabel: CSSProperties = {
 };
 
 type CharactersState =
-  | { status: "ready"; characters: CharacterSummary[] }
+  | { status: "ready"; characters: CharacterSummaryView[] }
   | { status: "unavailable"; characters: [] };
 
 async function loadCharacters(): Promise<CharactersState> {
@@ -44,20 +45,10 @@ async function loadCharacters(): Promise<CharactersState> {
 
   try {
     const resp = await characterRpc("ListMyCharacters", { account_id: session.accountId });
-    return { status: "ready", characters: resp.characters ?? [] };
+    return { status: "ready", characters: (resp.characters ?? []).map((c) => normalizeCharacterSummary(c)) };
   } catch {
     return { status: "unavailable", characters: [] };
   }
-}
-
-function characterClass(value: string): WydClass | null {
-  const normalized = value.trim().toLowerCase().replace(/[\s_-]/g, "");
-
-  if (normalized === "tk" || normalized === "transknight") return "TK";
-  if (normalized === "fm" || normalized === "foema") return "FM";
-  if (normalized === "bm" || normalized === "beastmaster") return "BM";
-  if (normalized === "ht" || normalized === "huntress") return "HT";
-  return null;
 }
 
 function formatIntegerLike(value: string | number | bigint) {
@@ -69,11 +60,11 @@ function formatIntegerLike(value: string | number | bigint) {
   return `${sign}${digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
 }
 
-function characterMaxStat(c: CharacterSummary, key: "hp" | "mp") {
-  return key === "hp" ? c.max_hp : c.max_mp;
+function characterMaxStat(c: CharacterSummaryView, key: "hp" | "mp") {
+  return key === "hp" ? c.maxHp : c.maxMp;
 }
 
-function characterAttributes(c: CharacterSummary) {
+function characterAttributes(c: CharacterSummaryView) {
   return [
     { label: "STR", value: c.strength },
     { label: "INT", value: c.intelligence },
@@ -196,7 +187,6 @@ export default async function DashboardPage() {
               </div>
             ) : null}
             {characters.map((c) => {
-              const cls = characterClass(c.class);
               const hpMax = characterMaxStat(c, "hp");
               const mpMax = characterMaxStat(c, "mp");
 
@@ -213,7 +203,7 @@ export default async function DashboardPage() {
                   }}
                 >
                   <div style={{ display: "flex", gap: 14, alignItems: "center", minWidth: 0 }}>
-                    {cls ? <ClassCrest cls={cls} size="lg" /> : <UnknownClassCrest label={c.class} />}
+                    <UnknownClassCrest label={c.classLabel} />
                     <div style={{ minWidth: 0 }}>
                       <div style={cardTitle}>{c.name}</div>
                       <Badge variant="gold" style={{ marginTop: 4 }}>
@@ -228,7 +218,7 @@ export default async function DashboardPage() {
                           textTransform: "uppercase",
                         }}
                       >
-                        Slot {c.slot} · {c.class}
+                        Slot {c.slot} · {c.classLabel}
                       </div>
                     </div>
                   </div>

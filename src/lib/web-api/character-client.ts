@@ -6,7 +6,7 @@ import { channelOptions, credentials, webApiAddress, webProtoPackage } from "./c
 export type CharacterSummary = {
   slot: number;
   name: string;
-  class: string;
+  class: Buffer;
   level: number;
   exp: string;
   coin: string;

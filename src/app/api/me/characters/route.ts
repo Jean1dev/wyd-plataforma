@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { characterRpc } from "@/lib/web-api/character-client";
+import { normalizeCharacterSummary } from "@/lib/web-api/character-normalize";
 
 export async function GET() {
   const session = await getSession();
@@ -15,5 +16,7 @@ export async function GET() {
     return NextResponse.json({ error: "upstream" }, { status: 502 });
   }
 
-  return NextResponse.json({ characters: resp.characters ?? [] });
+  return NextResponse.json({
+    characters: (resp.characters ?? []).map((c) => normalizeCharacterSummary(c)),
+  });
 }

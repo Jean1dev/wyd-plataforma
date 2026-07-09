@@ -52,7 +52,7 @@ message ListMyCharactersRequest {
 message CharacterSummary {
   int32 slot = 1;
   string name = 2;
-  string class = 3;
+  bytes class = 3; // opaque backend blob; normalized by the Next.js BFF
   int32 level = 4;
   int64 exp = 5;
   int64 coin = 6;
