@@ -9,14 +9,17 @@ import { PickerNote } from "./PickerNote";
 import { useItemCatalog } from "./catalog";
 import { errorMessage, PROPAGATION_NOTICE, setShop, type ShopItemPayload } from "./api";
 
-// item_index keyed by slot; 0/empty means "slot vazio". SetNpcShop replaces the
-// entire shop, so we always send every non-empty slot.
-type SlotState = Record<number, string>;
+// item_index and quantity keyed by slot; empty item_index means "slot vazio".
+// SetNpcShop replaces the entire shop, so we always send every non-empty slot.
+type SlotState = Record<number, { itemIndex: string; quantity: string }>;
 
 function initialSlots(shop: AdminNpcShopItem[]): SlotState {
   const state: SlotState = {};
   for (const item of shop) {
-    state[item.slot] = String(item.item_index);
+    state[item.slot] = {
+      itemIndex: String(item.item_index),
+      quantity: String(item.quantity || 1),
+    };
   }
   return state;
 }
@@ -36,12 +39,19 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
   const canSell = merchantHasShop(npc.merchant);
 
   const filledCount = useMemo(
-    () => Object.values(slots).filter((v) => v.trim() !== "" && Number(v) > 0).length,
+    () => Object.values(slots).filter((v) => v.itemIndex.trim() !== "" && Number(v.itemIndex) > 0).length,
     [slots],
   );
 
-  function setSlot(slot: number, value: string) {
-    setSlots((s) => ({ ...s, [slot]: value }));
+  function setSlot(slot: number, patch: Partial<{ itemIndex: string; quantity: string }>) {
+    setSlots((s) => ({
+      ...s,
+      [slot]: {
+        itemIndex: s[slot]?.itemIndex ?? "",
+        quantity: s[slot]?.quantity ?? "1",
+        ...patch,
+      },
+    }));
   }
 
   async function save() {
@@ -50,7 +60,7 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
 
     const items: ShopItemPayload[] = [];
     for (const [slotKey, raw] of Object.entries(slots)) {
-      const value = raw.trim();
+      const value = raw.itemIndex.trim();
       if (value === "") continue;
       const item_index = Number(value);
       if (!Number.isInteger(item_index) || item_index <= 0) {
@@ -58,7 +68,24 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
         setBusy(false);
         return;
       }
-      items.push({ slot: Number(slotKey), item_index, eff1: 0, effv1: 0, eff2: 0, effv2: 0, eff3: 0, effv3: 0 });
+      const quantityRaw = raw.quantity.trim();
+      const quantity = quantityRaw === "" ? 1 : Number(quantityRaw);
+      if (!Number.isInteger(quantity) || quantity < 1 || quantity > 255) {
+        setMsg({ kind: "error", text: `Slot ${slotKey}: quantity deve ser inteiro entre 1 e 255.` });
+        setBusy(false);
+        return;
+      }
+      items.push({
+        slot: Number(slotKey),
+        item_index,
+        eff1: 0,
+        effv1: 0,
+        eff2: 0,
+        effv2: 0,
+        eff3: 0,
+        effv3: 0,
+        quantity,
+      });
     }
 
     try {
@@ -126,17 +153,36 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
             <span style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--text-muted)" }}>
               Slot {slot}
             </span>
-            <Combobox
-              compact
-              value={slots[slot] ?? ""}
-              onChange={(v) => setSlot(slot, v)}
-              options={itemOptions}
-              available={catalog.available}
-              loading={catalog.loading}
-              placeholder="Buscar item…"
-              manualPlaceholder="vazio"
-              manualInputMode="numeric"
-            />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 84px", gap: 8 }}>
+              <Combobox
+                compact
+                value={slots[slot]?.itemIndex ?? ""}
+                onChange={(v) => setSlot(slot, { itemIndex: v })}
+                options={itemOptions}
+                available={catalog.available}
+                loading={catalog.loading}
+                placeholder="Buscar item…"
+                manualPlaceholder="vazio"
+                manualInputMode="numeric"
+              />
+              <input
+                type="number"
+                min={1}
+                max={255}
+                value={slots[slot]?.quantity ?? "1"}
+                onChange={(e) => setSlot(slot, { quantity: e.target.value })}
+                placeholder="Qtd"
+                style={{
+                  padding: "9px 10px",
+                  background: "var(--surface-inset)",
+                  border: "1px solid var(--iron-400)",
+                  borderRadius: "var(--radius-sm)",
+                  color: "var(--text-body)",
+                  fontFamily: "var(--font-body)",
+                  fontSize: 14,
+                }}
+              />
+            </div>
           </div>
         ))}
       </div>

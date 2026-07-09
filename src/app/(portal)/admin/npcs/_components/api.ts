@@ -58,6 +58,7 @@ export type ShopItemPayload = {
   effv2: number;
   eff3: number;
   effv3: number;
+  quantity: number;
 };
 
 export function setShop(npcId: string, items: ShopItemPayload[]) {

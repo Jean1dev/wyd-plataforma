@@ -16,8 +16,16 @@ function eff(v: unknown): number {
   return n == null ? 0 : n;
 }
 
+function quantity(v: unknown): { ok: true; value: number } | { ok: false } {
+  if (v == null || v === "") return { ok: true, value: 1 };
+  const n = int(v);
+  if (n == null) return { ok: false };
+  return { ok: true, value: n === 0 ? 1 : n };
+}
+
 // Parses and validates the full shop (SetNpcShop replaces the whole shop).
-// Mirrors the web-api validation: unique slots in [0,26], item_index > 0.
+// Mirrors the web-api validation: unique slots in [0,26], item_index > 0,
+// quantity normalized to 1..255 (0/absent -> 1).
 function parseItems(raw: unknown): { ok: true; items: AdminNpcShopItem[] } | { ok: false; error: string } {
   if (!Array.isArray(raw)) return { ok: false, error: "items_required" };
 
@@ -30,9 +38,12 @@ function parseItems(raw: unknown): { ok: true; items: AdminNpcShopItem[] } | { o
 
     const slot = int(e.slot);
     const item_index = int(e.item_index);
+    const qty = quantity(e.quantity);
     if (slot == null || slot < 0 || slot >= SHOP_SLOT_COUNT) return { ok: false, error: "slot_out_of_range" };
     if (seen.has(slot)) return { ok: false, error: "slot_duplicated" };
     if (item_index == null || item_index <= 0) return { ok: false, error: "item_index_invalid" };
+    if (!qty.ok) return { ok: false, error: "quantity_invalid" };
+    if (qty.value < 1 || qty.value > 255) return { ok: false, error: "quantity_invalid" };
     seen.add(slot);
 
     items.push({
@@ -44,6 +55,7 @@ function parseItems(raw: unknown): { ok: true; items: AdminNpcShopItem[] } | { o
       effv2: eff(e.effv2),
       eff3: eff(e.eff3),
       effv3: eff(e.effv3),
+      quantity: qty.value,
     });
   }
 

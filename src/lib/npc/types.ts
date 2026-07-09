@@ -18,6 +18,7 @@ export type AdminNpcShopItem = {
   effv2: number;
   eff3: number;
   effv3: number;
+  quantity: number;
 };
 
 export type AdminNpc = {
