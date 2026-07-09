@@ -11,21 +11,34 @@ export function RankRow({
   rank,
   name,
   cls,
+  classCode,
+  clan,
+  classMaster,
   level,
   score,
-  guild,
+  guildId,
 }: {
   rank: number;
   name: string;
-  cls: WydClass;
+  cls?: WydClass;
+  classCode: number;
+  clan: number;
+  classMaster: number;
   level: number;
   score: string;
-  guild?: string;
+  guildId: number;
 }) {
+  const detail = [
+    guildId > 0 ? `Guilda ${guildId}` : "",
+    clan ? `Reino ${clan}` : "",
+    `Tier ${classMaster}`,
+  ].filter(Boolean);
+
   return (
     <div
       style={{
-        display: "flex",
+        display: "grid",
+        gridTemplateColumns: "32px 38px minmax(0,1fr) 58px 74px minmax(96px,130px)",
         alignItems: "center",
         gap: 14,
         padding: "10px 14px",
@@ -44,8 +57,29 @@ export function RankRow({
       >
         {rank}
       </span>
-      <span style={{ width: 28, display: "flex" }}>
-        <ClassCrest cls={cls} size="sm" />
+      <span style={{ width: 38, display: "flex", justifyContent: "center" }}>
+        {cls ? (
+          <ClassCrest cls={cls} size="sm" />
+        ) : (
+          <span
+            title={`Classe ${classCode}`}
+            style={{
+              width: 32,
+              height: 32,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "var(--radius-md)",
+              border: "1px solid var(--iron-400)",
+              background: "var(--surface-inset)",
+              color: "var(--text-faint)",
+              fontFamily: "var(--font-mono)",
+              fontSize: "var(--text-xs)",
+            }}
+          >
+            {classCode}
+          </span>
+        )}
       </span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
@@ -58,7 +92,7 @@ export function RankRow({
         >
           {name}
         </div>
-        {guild ? (
+        {detail.length > 0 ? (
           <div
             style={{
               fontFamily: "var(--font-ui)",
@@ -68,13 +102,12 @@ export function RankRow({
               color: "var(--text-faint)",
             }}
           >
-            {guild}
+            {detail.join(" · ")}
           </div>
         ) : null}
       </div>
       <span
         style={{
-          width: 50,
           fontFamily: "var(--font-mono)",
           fontSize: "var(--text-sm)",
           color: "var(--steel-300)",
@@ -84,15 +117,27 @@ export function RankRow({
       </span>
       <span
         style={{
-          width: 70,
           textAlign: "right",
           fontFamily: "var(--font-mono)",
           fontSize: "var(--text-sm)",
           color: "var(--gold-300)",
           fontWeight: 500,
+          overflowWrap: "anywhere",
         }}
       >
         {score}
+      </span>
+      <span
+        style={{
+          textAlign: "right",
+          fontFamily: "var(--font-ui)",
+          fontSize: "var(--text-2xs)",
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: "var(--text-faint)",
+        }}
+      >
+        Classe {classCode}
       </span>
     </div>
   );
