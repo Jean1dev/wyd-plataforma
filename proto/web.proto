@@ -145,6 +145,7 @@ message AdminNpcShopItem {
   int32 eff1 = 3; int32 effv1 = 4;  // optional effects (0 = none)
   int32 eff2 = 5; int32 effv2 = 6;
   int32 eff3 = 7; int32 effv3 = 8;
+  int32 quantity = 9;  // quantity sold in the slot; 0/absent becomes 1
 }
 
 message ListNpcsRequest {
