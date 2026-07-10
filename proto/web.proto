@@ -52,14 +52,14 @@ message ListMyCharactersRequest {
 message CharacterSummary {
   int32 slot = 1;
   string name = 2;
-  bytes class = 3; // opaque backend blob; normalized by the Next.js BFF
+  int32 class = 3;
   int32 level = 4;
   int64 exp = 5;
-  int64 coin = 6;
-  int32 hp = 7;
-  int32 max_hp = 8;
-  int32 mp = 9;
-  int32 max_mp = 10;
+  int32 coin = 6;
+  int32 max_hp = 7;
+  int32 hp = 8;
+  int32 max_mp = 9;
+  int32 mp = 10;
   int32 strength = 11;
   int32 intelligence = 12;
   int32 dexterity = 13;
