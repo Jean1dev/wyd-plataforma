@@ -148,47 +148,74 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-        {slotList.map((slot) => (
-          <div key={slot} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <span style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--text-muted)" }}>
-              Slot {slot}
-            </span>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 84px", gap: 8 }}>
-              <Combobox
-                compact
-                value={slots[slot]?.itemIndex ?? ""}
-                onChange={(v) => setSlot(slot, { itemIndex: v })}
-                options={itemOptions}
-                available={catalog.available}
-                loading={catalog.loading}
-                placeholder="Buscar item…"
-                manualPlaceholder="vazio"
-                manualInputMode="numeric"
-              />
-              <input
-                type="number"
-                min={1}
-                max={255}
-                value={slots[slot]?.quantity ?? "1"}
-                onChange={(e) => setSlot(slot, { quantity: e.target.value })}
-                placeholder="Qtd"
-                style={{
-                  padding: "9px 10px",
-                  background: "var(--surface-inset)",
-                  border: "1px solid var(--iron-400)",
-                  borderRadius: "var(--radius-sm)",
-                  color: "var(--text-body)",
-                  fontFamily: "var(--font-body)",
-                  fontSize: 14,
-                }}
-              />
+        {slotList.map((slot) => {
+          const itemValue = slots[slot]?.itemIndex ?? "";
+          const filled = itemValue.trim() !== "" && Number(itemValue) > 0;
+          return (
+            <div key={slot} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--text-muted)" }}>
+                Slot {slot}
+              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "minmax(0, 1fr) 84px",
+                    gap: 8,
+                    flex: 1,
+                    minWidth: 0,
+                  }}
+                >
+                  <Combobox
+                    compact
+                    value={itemValue}
+                    onChange={(v) => setSlot(slot, { itemIndex: v })}
+                    options={itemOptions}
+                    available={catalog.available}
+                    loading={catalog.loading}
+                    placeholder="Buscar item…"
+                    manualPlaceholder="vazio"
+                    manualInputMode="numeric"
+                  />
+                  <input
+                    type="number"
+                    min={1}
+                    max={255}
+                    value={slots[slot]?.quantity ?? "1"}
+                    onChange={(e) => setSlot(slot, { quantity: e.target.value })}
+                    placeholder="Qtd"
+                    style={{
+                      padding: "9px 10px",
+                      background: "var(--surface-inset)",
+                      border: "1px solid var(--iron-400)",
+                      borderRadius: "var(--radius-sm)",
+                      color: "var(--text-body)",
+                      fontFamily: "var(--font-body)",
+                      fontSize: 14,
+                    }}
+                  />
+                </div>
+                {filled ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSlot(slot, { itemIndex: "", quantity: "1" })}
+                    aria-label={`Remover item do slot ${slot}`}
+                    title="Remover item deste slot"
+                  >
+                    ×
+                  </Button>
+                ) : null}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-muted)" }}>
-        {filledCount} item(s) na loja. Salvar substitui a loja inteira — slots vazios ficam sem item.
+        {filledCount} item(s) na loja. Clique em &ldquo;×&rdquo; para remover um item do slot. Salvar
+        substitui a loja inteira — slots vazios ficam sem item.
       </div>
 
       {msg ? (
