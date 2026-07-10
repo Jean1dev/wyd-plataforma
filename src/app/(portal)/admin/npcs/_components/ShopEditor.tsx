@@ -121,28 +121,48 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-        {slotList.map((slot) => (
-          <div key={slot} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <span style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--text-muted)" }}>
-              Slot {slot}
-            </span>
-            <Combobox
-              compact
-              value={slots[slot] ?? ""}
-              onChange={(v) => setSlot(slot, v)}
-              options={itemOptions}
-              available={catalog.available}
-              loading={catalog.loading}
-              placeholder="Buscar item…"
-              manualPlaceholder="vazio"
-              manualInputMode="numeric"
-            />
-          </div>
-        ))}
+        {slotList.map((slot) => {
+          const filled = (slots[slot] ?? "").trim() !== "" && Number(slots[slot]) > 0;
+          return (
+            <div key={slot} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={{ fontFamily: "var(--font-ui)", fontSize: 11, color: "var(--text-muted)" }}>
+                Slot {slot}
+              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Combobox
+                    compact
+                    value={slots[slot] ?? ""}
+                    onChange={(v) => setSlot(slot, v)}
+                    options={itemOptions}
+                    available={catalog.available}
+                    loading={catalog.loading}
+                    placeholder="Buscar item…"
+                    manualPlaceholder="vazio"
+                    manualInputMode="numeric"
+                  />
+                </div>
+                {filled ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSlot(slot, "")}
+                    aria-label={`Remover item do slot ${slot}`}
+                    title="Remover item deste slot"
+                  >
+                    ×
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <div style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-muted)" }}>
-        {filledCount} item(s) na loja. Salvar substitui a loja inteira — slots vazios ficam sem item.
+        {filledCount} item(s) na loja. Clique em &ldquo;×&rdquo; para remover um item do slot. Salvar
+        substitui a loja inteira — slots vazios ficam sem item.
       </div>
 
       {msg ? (
