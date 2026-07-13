@@ -4,22 +4,9 @@
 // these hit our own same-origin REST routes which derive moderator_id from the
 // session cookie.
 
-export type AdminApiError = { status: number; result?: string; error?: string };
+import { sendAdminRequest as send, type AdminApiError } from "../../_shared/api-client";
 
-async function send(method: string, url: string, body?: unknown): Promise<unknown> {
-  const res = await fetch(url, {
-    method,
-    headers: body === undefined ? undefined : { "content-type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const err: AdminApiError = { status: res.status, ...(data as object) };
-    throw err;
-  }
-  return data;
-}
+export type { AdminApiError };
 
 export function setVisibility(npcId: string, enabled: boolean) {
   return send("PATCH", `/api/admin/npcs/${encodeURIComponent(npcId)}/visibility`, { enabled });

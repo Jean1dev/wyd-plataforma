@@ -4,6 +4,8 @@ import { NEWS, SERVER_NAME, EXP_RATE } from "@/lib/portal-data";
 import { getSession } from "@/lib/auth/session";
 import { characterRpc } from "@/lib/web-api/character-client";
 import { normalizeCharacterSummary, type CharacterSummaryView } from "@/lib/web-api/character-normalize";
+import { getDonateBalance } from "@/lib/donate/balance";
+import { formatDonate as formatIntegerLike } from "@/lib/donate/format";
 
 const panel: CSSProperties = {
   background: "var(--grad-panel)",
@@ -39,6 +41,8 @@ type CharactersState =
   | { status: "ready"; characters: CharacterSummaryView[] }
   | { status: "unavailable"; characters: [] };
 
+type BalanceState = { status: "ready"; balance: string } | { status: "unavailable"; balance: "0" };
+
 async function loadCharacters(): Promise<CharactersState> {
   const session = await getSession();
   if (!session.isLoggedIn || !session.accountId) return { status: "ready", characters: [] };
@@ -51,13 +55,12 @@ async function loadCharacters(): Promise<CharactersState> {
   }
 }
 
-function formatIntegerLike(value: string | number | bigint) {
-  const raw = typeof value === "bigint" ? value.toString() : String(value);
-  if (!/^-?\d+$/.test(raw)) return raw;
+async function loadDonateBalance(): Promise<BalanceState> {
+  const session = await getSession();
+  if (!session.isLoggedIn || !session.accountId) return { status: "ready", balance: "0" };
 
-  const sign = raw.startsWith("-") ? "-" : "";
-  const digits = sign ? raw.slice(1) : raw;
-  return `${sign}${digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+  const balance = await getDonateBalance(session.accountId);
+  return balance === null ? { status: "unavailable", balance: "0" } : { status: "ready", balance };
 }
 
 function characterMaxStat(c: CharacterSummaryView, key: "hp" | "mp") {
@@ -74,7 +77,7 @@ function characterAttributes(c: CharacterSummaryView) {
 }
 
 export default async function DashboardPage() {
-  const charactersState = await loadCharacters();
+  const [charactersState, balanceState] = await Promise.all([loadCharacters(), loadDonateBalance()]);
   const characters = charactersState.characters;
 
   return (
@@ -158,7 +161,12 @@ export default async function DashboardPage() {
           <Stat label="Jogadores Online" value="1.284" accent="var(--emerald-400)" sub="pico hoje: 1.902" />
         </div>
         <div style={{ ...panel, padding: 18 }}>
-          <Stat label="Donate Coins" value="12.500" accent="var(--gold-300)" sub="saldo atual" />
+          <Stat
+            label="Donate Coins"
+            value={balanceState.status === "ready" ? formatIntegerLike(balanceState.balance) : "--"}
+            accent="var(--gold-300)"
+            sub={balanceState.status === "ready" ? "saldo atual" : "indisponível"}
+          />
         </div>
         <div style={{ ...panel, padding: 18 }}>
           <Stat label="Personagens" value={String(characters.length)} accent="var(--steel-300)" sub="vinculados" />
