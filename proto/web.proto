@@ -246,3 +246,106 @@ message ListMapZonesResponse {
   AdminResult result = 1;
   repeated MapZone zones = 2;
 }
+
+// Donate shop services. The browser never calls these directly; the Next.js
+// BFF derives account_id/moderator_id from the httpOnly session cookie.
+service DonateAdminService {
+  rpc ListShopItems(ListShopItemsRequest) returns (ListShopItemsResponse);
+  rpc UpsertShopItem(UpsertShopItemRequest) returns (UpsertShopItemResponse);
+  rpc SetShopItemEnabled(SetShopItemEnabledRequest) returns (AdminAck);
+  rpc DeleteShopItem(DeleteShopItemRequest) returns (AdminAck);
+  rpc CreditDonateBalance(CreditDonateBalanceRequest) returns (CreditDonateBalanceResponse);
+}
+
+service DonateShopService {
+  rpc ListShopItems(ListPublicShopItemsRequest) returns (ListPublicShopItemsResponse);
+  rpc GetBalance(GetDonateBalanceRequest) returns (GetDonateBalanceResponse);
+  rpc Buy(BuyDonateShopItemRequest) returns (BuyDonateShopItemResponse);
+}
+
+enum BuyResult {
+  BUY_RESULT_UNSPECIFIED = 0;
+  BUY_RESULT_OK = 1;
+  BUY_RESULT_INSUFFICIENT_FUNDS = 2;
+  BUY_RESULT_NOT_FOUND = 3;
+  BUY_RESULT_DISABLED = 4;
+}
+
+message DonateShopItem {
+  int64 id = 1;
+  int32 item_index = 2;
+  int32 eff1 = 3; int32 effv1 = 4;
+  int32 eff2 = 5; int32 effv2 = 6;
+  int32 eff3 = 7; int32 effv3 = 8;
+  int32 price = 9;
+  string title = 10;
+  string description = 11;
+  bool enabled = 12;
+  int32 expires_days = 13;
+}
+
+message ListShopItemsRequest {
+  int64 moderator_id = 1;
+}
+
+message ListShopItemsResponse {
+  AdminResult result = 1;
+  repeated DonateShopItem items = 2;
+}
+
+message UpsertShopItemRequest {
+  int64 moderator_id = 1;
+  DonateShopItem item = 2;
+}
+
+message UpsertShopItemResponse {
+  AdminResult result = 1;
+  int64 item_id = 2;
+}
+
+message SetShopItemEnabledRequest {
+  int64 moderator_id = 1;
+  int64 item_id = 2;
+  bool enabled = 3;
+}
+
+message DeleteShopItemRequest {
+  int64 moderator_id = 1;
+  int64 item_id = 2;
+}
+
+message CreditDonateBalanceRequest {
+  int64 moderator_id = 1;
+  int64 account_id = 2;
+  int32 amount = 3;
+  string reason = 4;
+}
+
+message CreditDonateBalanceResponse {
+  AdminResult result = 1;
+  int64 new_balance = 2;
+}
+
+message ListPublicShopItemsRequest {}
+
+message ListPublicShopItemsResponse {
+  repeated DonateShopItem items = 1;
+}
+
+message GetDonateBalanceRequest {
+  int64 account_id = 1;
+}
+
+message GetDonateBalanceResponse {
+  int64 balance = 1;
+}
+
+message BuyDonateShopItemRequest {
+  int64 account_id = 1;
+  int64 shop_item_id = 2;
+}
+
+message BuyDonateShopItemResponse {
+  BuyResult result = 1;
+  int64 new_balance = 2;
+}

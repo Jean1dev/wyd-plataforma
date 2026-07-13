@@ -4,11 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Avatar } from "@/components/ui";
-import { NAV_LINKS, COIN_BALANCE } from "@/lib/portal-data";
+import { NAV_LINKS } from "@/lib/portal-data";
 
 type TopNavProps = {
   userName: string;
   isModerator?: boolean;
+  donateBalance: string;
 };
 
 function initials(name: string) {
@@ -18,12 +19,16 @@ function initials(name: string) {
     .padEnd(2, "?");
 }
 
-export function TopNav({ userName, isModerator = false }: TopNavProps) {
+export function TopNav({ userName, isModerator = false, donateBalance }: TopNavProps) {
   const pathname = usePathname();
   const router = useRouter();
 
   const navLinks = isModerator
-    ? [...NAV_LINKS, { href: "/admin/npcs", label: "Admin" } as const]
+    ? [
+        ...NAV_LINKS,
+        { href: "/admin/npcs", label: "Admin NPCs" } as const,
+        { href: "/admin/donate", label: "Admin Donate" } as const,
+      ]
     : NAV_LINKS;
 
   async function logout() {
@@ -129,7 +134,7 @@ export function TopNav({ userName, isModerator = false }: TopNavProps) {
                 fontWeight: 500,
               }}
             >
-              {COIN_BALANCE}
+              {donateBalance}
             </span>
           </div>
 
