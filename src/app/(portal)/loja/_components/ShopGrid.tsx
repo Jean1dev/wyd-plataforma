@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Badge } from "@/components/ui";
+import { Badge, Button } from "@/components/ui";
 import { formatDonate } from "@/lib/donate/format";
 import type { DonateShopItem } from "@/lib/donate/types";
 import { BuyOfferButton } from "./BuyOfferButton";
+import { TopupModal } from "./TopupModal";
 
 export function ShopGrid({ items, initialBalance }: { items: DonateShopItem[]; initialBalance: string }) {
   const [balance, setBalance] = useState(initialBalance);
+  const [topupOpen, setTopupOpen] = useState(false);
 
   return (
     <div style={{ display: "grid", gap: 22 }}>
@@ -33,11 +35,18 @@ export function ShopGrid({ items, initialBalance }: { items: DonateShopItem[]; i
             {formatDonate(balance)} Donate
           </div>
         </div>
-        <div style={{ maxWidth: 520, color: "var(--text-muted)", fontFamily: "var(--font-body)", fontSize: 13 }}>
-          A entrega acontece no armazém da conta no próximo login. Mantenha espaço livre: se o armazém estiver
-          cheio, o item pode ser perdido.
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 520 }}>
+          <div style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)", fontSize: 13 }}>
+            A entrega acontece no armazém da conta no próximo login. Mantenha espaço livre: se o armazém estiver
+            cheio, o item pode ser perdido.
+          </div>
+          <Button type="button" size="sm" onClick={() => setTopupOpen(true)}>
+            Recarregar créditos (PIX)
+          </Button>
         </div>
       </div>
+
+      {topupOpen ? <TopupModal onClose={() => setTopupOpen(false)} onBalance={setBalance} /> : null}
 
       {items.length === 0 ? (
         <div style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
