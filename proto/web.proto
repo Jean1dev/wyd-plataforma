@@ -350,3 +350,94 @@ message BuyDonateShopItemResponse {
   BuyResult result = 1;
   int64 new_balance = 2;
 }
+
+// Daily reward services. The browser never calls these directly; the Next.js
+// BFF derives account_id/moderator_id from the httpOnly session cookie. Free,
+// resgatable at most once per account per UTC day; no wallet, no streak.
+service DailyRewardAdminService {
+  rpc ListRewardItems(ListRewardItemsRequest) returns (ListRewardItemsResponse);
+  rpc UpsertRewardItem(UpsertRewardItemRequest) returns (UpsertRewardItemResponse);
+  rpc SetRewardItemEnabled(SetRewardItemEnabledRequest) returns (AdminAck);
+  rpc DeleteRewardItem(DeleteRewardItemRequest) returns (AdminAck);
+}
+
+service DailyRewardService {
+  rpc ListRewards(ListRewardsRequest) returns (ListRewardsResponse);
+  rpc GetClaimStatus(GetClaimStatusRequest) returns (GetClaimStatusResponse);
+  rpc Claim(ClaimRewardRequest) returns (ClaimRewardResponse);
+}
+
+enum ClaimResult {
+  CLAIM_RESULT_UNSPECIFIED = 0;
+  CLAIM_RESULT_OK = 1;
+  CLAIM_RESULT_ALREADY_CLAIMED = 2;
+  CLAIM_RESULT_NOT_FOUND = 3;
+  CLAIM_RESULT_DISABLED = 4;
+}
+
+message DailyRewardItem {
+  int64 id = 1;
+  int32 item_index = 2;
+  int32 eff1 = 3; int32 effv1 = 4;
+  int32 eff2 = 5; int32 effv2 = 6;
+  int32 eff3 = 7; int32 effv3 = 8;
+  string title = 9;
+  string description = 10;
+  bool enabled = 11;
+  int32 expires_days = 12;
+}
+
+message ListRewardItemsRequest {
+  int64 moderator_id = 1;
+}
+
+message ListRewardItemsResponse {
+  AdminResult result = 1;
+  repeated DailyRewardItem items = 2;
+}
+
+message UpsertRewardItemRequest {
+  int64 moderator_id = 1;
+  DailyRewardItem item = 2;
+}
+
+message UpsertRewardItemResponse {
+  AdminResult result = 1;
+  int64 item_id = 2;
+}
+
+message SetRewardItemEnabledRequest {
+  int64 moderator_id = 1;
+  int64 item_id = 2;
+  bool enabled = 3;
+}
+
+message DeleteRewardItemRequest {
+  int64 moderator_id = 1;
+  int64 item_id = 2;
+}
+
+message ListRewardsRequest {}
+
+message ListRewardsResponse {
+  repeated DailyRewardItem items = 1;
+}
+
+message GetClaimStatusRequest {
+  int64 account_id = 1;
+}
+
+message GetClaimStatusResponse {
+  bool claimed_today = 1;
+  int64 claimed_item_id = 2;
+  string claimed_item_title = 3; // "" if the claimed offer was later deleted
+}
+
+message ClaimRewardRequest {
+  int64 account_id = 1;
+  int64 reward_item_id = 2;
+}
+
+message ClaimRewardResponse {
+  ClaimResult result = 1;
+}
