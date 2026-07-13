@@ -1,66 +1,36 @@
-import type { CSSProperties } from "react";
-import { Button } from "@/components/ui";
-import { REWARDS, CLAIMED_DAYS } from "@/lib/portal-data";
+import { getSession } from "@/lib/auth/session";
+import { dailyRewardRpc } from "@/lib/web-api/daily-reward-client";
+import type { RewardLoadState } from "@/lib/daily-reward/types";
+import { RewardGrid } from "./_components/RewardGrid";
 
-type CellState = {
-  border: string;
-  bg: string;
-  opacity: number;
-  transform: string;
-  glow: string;
-  statusText: string;
-  statusColor: string;
-  iconColor: string;
-};
+async function loadRewards(): Promise<RewardLoadState> {
+  const session = await getSession();
+  if (!session.isLoggedIn || !session.accountId) {
+    return { status: "unavailable" };
+  }
 
-function cellState(day: number, claimed: number): CellState {
-  if (day <= claimed) {
+  try {
+    const [rewards, status] = await Promise.all([
+      dailyRewardRpc("ListRewards", {}),
+      dailyRewardRpc("GetClaimStatus", { account_id: session.accountId }),
+    ]);
     return {
-      border: "1px solid var(--emerald-600)",
-      bg: "rgba(62,140,90,0.10)",
-      opacity: 0.9,
-      transform: "none",
-      glow: "",
-      statusText: "Resgatado",
-      statusColor: "var(--emerald-400)",
-      iconColor: "var(--emerald-400)",
+      status: "ok",
+      items: rewards.items ?? [],
+      claimedToday: status.claimed_today ?? false,
+      claimedItemId: status.claimed_item_id ?? "0",
+      claimedItemTitle: status.claimed_item_title ?? "",
     };
+  } catch {
+    return { status: "unavailable" };
   }
-  if (day === claimed + 1) {
-    return {
-      border: "2px solid var(--gold-500)",
-      bg: "var(--grad-panel)",
-      opacity: 1,
-      transform: "scale(1.03)",
-      glow: "var(--glow-gold), ",
-      statusText: "Disponível",
-      statusColor: "var(--gold-300)",
-      iconColor: "var(--gold-300)",
-    };
-  }
-  return {
-    border: "1px solid var(--iron-400)",
-    bg: "var(--surface-inset)",
-    opacity: 0.5,
-    transform: "none",
-    glow: "",
-    statusText: "Bloqueado",
-    statusColor: "var(--text-faint)",
-    iconColor: "var(--text-faint)",
-  };
 }
 
-export default function RecompensasPage() {
-  const claimed = CLAIMED_DAYS;
-  const canClaim = claimed < 7;
-  const nextReward = canClaim ? REWARDS[claimed] : null;
-  const dayWord = claimed === 1 ? "dia" : "dias";
+export default async function RecompensasPage() {
+  const rewards = await loadRewards();
 
   return (
-    <div
-      className="wyd-screen"
-      style={{ maxWidth: 1140, margin: "0 auto", padding: "32px 24px 72px" }}
-    >
+    <div className="wyd-screen" style={{ maxWidth: 1140, margin: "0 auto", padding: "32px 24px 72px" }}>
       <div className="wyd-eyebrow" style={{ marginBottom: 6 }}>
         Bênção diária do reino
       </div>
@@ -85,119 +55,32 @@ export default function RecompensasPage() {
           textWrap: "pretty",
         }}
       >
-        Entre todos os dias e mantenha sua sequência. No{" "}
-        <strong style={{ color: "var(--gold-300)" }}>7º dia</strong> uma recompensa lendária aguarda.
+        Escolha uma oferta gratuita para resgatar hoje. Você pode resgatar{" "}
+        <strong style={{ color: "var(--gold-300)" }}>uma vez por dia</strong>, entre todas as ofertas disponíveis.
       </p>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 22, flexWrap: "wrap" }}>
+      {rewards.status === "unavailable" ? (
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "8px 16px",
-            background: "var(--surface-inset)",
-            border: "1px solid var(--gold-700)",
-            borderRadius: "var(--radius-pill)",
-            boxShadow: "var(--bevel-in)",
+            background: "var(--grad-panel)",
+            border: "1px solid var(--iron-400)",
+            borderRadius: "var(--radius-lg)",
+            boxShadow: "var(--bevel-raise), var(--shadow-md)",
+            padding: 22,
+            color: "var(--text-muted)",
+            fontFamily: "var(--font-body)",
           }}
         >
-          <span style={{ color: "var(--gold-400)", fontSize: 16 }}>✦</span>
-          <span
-            style={{
-              fontFamily: "var(--font-ui)",
-              fontSize: 12,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              color: "var(--gold-300)",
-            }}
-          >
-            Sequência atual: {claimed} {dayWord}
-          </span>
+          Não foi possível carregar as recompensas agora. Verifique sua sessão e tente novamente.
         </div>
-        <span style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text-muted)" }}>
-          {canClaim ? `Próxima: ${nextReward?.label}` : "Sequência completa!"}
-        </span>
-      </div>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))",
-          gap: 14,
-          marginBottom: 28,
-        }}
-      >
-        {REWARDS.map((r, i) => {
-          const day = i + 1;
-          const s = cellState(day, claimed);
-          const cell: CSSProperties = {
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            textAlign: "center",
-            padding: "18px 12px",
-            minHeight: 160,
-            borderRadius: "var(--radius-md)",
-            border: s.border,
-            background: s.bg,
-            boxShadow: `${s.glow}var(--bevel-raise)`,
-            opacity: s.opacity,
-            transform: s.transform,
-            transition: "transform var(--dur-base) var(--ease-out)",
-          };
-          return (
-            <div key={r.label} style={cell}>
-              <div
-                style={{
-                  fontFamily: "var(--font-ui)",
-                  fontSize: 10,
-                  letterSpacing: "0.14em",
-                  textTransform: "uppercase",
-                  color: "var(--text-faint)",
-                }}
-              >
-                Dia {day}
-              </div>
-              <div style={{ fontSize: 32, color: s.iconColor, lineHeight: 1 }}>{r.icon}</div>
-              <div
-                style={{
-                  fontFamily: "var(--font-body)",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "var(--parchment-100)",
-                  textAlign: "center",
-                  lineHeight: 1.25,
-                }}
-              >
-                {r.label}
-              </div>
-              <div
-                style={{
-                  fontFamily: "var(--font-ui)",
-                  fontSize: 10,
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  color: s.statusColor,
-                }}
-              >
-                {s.statusText}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <Button size="lg" disabled={!canClaim}>
-          {canClaim ? `Resgatar Dia ${claimed + 1}` : "Tudo resgatado"}
-        </Button>
-        <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-faint)" }}>
-          Recompensas reiniciam a cada 7 dias.
-        </span>
-      </div>
+      ) : (
+        <RewardGrid
+          items={rewards.items}
+          initialClaimedToday={rewards.claimedToday}
+          initialClaimedItemId={rewards.claimedItemId}
+          initialClaimedItemTitle={rewards.claimedItemTitle}
+        />
+      )}
     </div>
   );
 }

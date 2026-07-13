@@ -111,18 +111,3 @@ export const STEPS = [
 
 export const REQ_MIN = ["Windows 7 64-bit", "Core i3 / equivalente", "4 GB de RAM", "DirectX 9.0c", "5 GB livres"];
 export const REQ_REC = ["Windows 10/11 64-bit", "Core i5 / Ryzen 5", "8 GB de RAM", "DirectX 11", "SSD · 10 GB livres"];
-
-export type Reward = { label: string; icon: string };
-
-export const REWARDS: Reward[] = [
-  { label: "500 Coins", icon: "◈" },
-  { label: "Poção HP x20", icon: "✚" },
-  { label: "Pergaminho TP x10", icon: "✦" },
-  { label: "1.000 Coins", icon: "◈" },
-  { label: "Pacote de Refino", icon: "❖" },
-  { label: "Baú Raro", icon: "✧" },
-  { label: "Montaria 7 dias", icon: "✸" },
-];
-
-/** How many daily rewards are already claimed (static, presentational). */
-export const CLAIMED_DAYS: number = 3;
