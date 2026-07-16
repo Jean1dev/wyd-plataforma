@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { Button, Stat, StatBar, Badge, Tag } from "@/components/ui";
+import { Button, Stat, StatBar, Badge, Tag, ClassCrest } from "@/components/ui";
 import { NEWS, SERVER_NAME, EXP_RATE } from "@/lib/portal-data";
 import { getSession } from "@/lib/auth/session";
 import { characterRpc } from "@/lib/web-api/character-client";
@@ -211,7 +211,11 @@ export default async function DashboardPage() {
                   }}
                 >
                   <div style={{ display: "flex", gap: 14, alignItems: "center", minWidth: 0 }}>
-                    <UnknownClassCrest label={c.classLabel} />
+                    {c.cls ? (
+                      <ClassCrest cls={c.cls} size="lg" />
+                    ) : (
+                      <UnknownClassCrest label={c.classLabel} />
+                    )}
                     <div style={{ minWidth: 0 }}>
                       <div style={cardTitle}>{c.name}</div>
                       <Badge variant="gold" style={{ marginTop: 4 }}>

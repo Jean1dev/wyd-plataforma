@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
-import { RankRow, type WydClass } from "@/components/ui";
+import { RankRow } from "@/components/ui";
+import { wydClassFromCode } from "@/lib/wyd-class";
 
 const PAGE_SIZE = 50;
 
@@ -20,13 +21,6 @@ type RankingEntry = {
 type RankingResponse = {
   entries: RankingEntry[];
   totalCount: number;
-};
-
-const CLASS_BY_CODE: Record<number, WydClass> = {
-  0: "TK",
-  1: "FM",
-  2: "BM",
-  3: "HT",
 };
 
 function formatExp(exp: string) {
@@ -177,7 +171,7 @@ export function RankingsBoard() {
               key={r.name}
               rank={r.rank}
               name={r.name}
-              cls={CLASS_BY_CODE[r.class]}
+              cls={wydClassFromCode(r.class)}
               classCode={r.class}
               clan={r.clan}
               classMaster={r.classMaster}
