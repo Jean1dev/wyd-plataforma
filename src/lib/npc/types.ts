@@ -53,6 +53,13 @@ export type MapZone = {
   name: string;
 };
 
+// Global price override. Item absent from a ListItemPrices response has no
+// override — the game catalog's base price applies.
+export type ItemPrice = {
+  item_index: number;
+  price: number;
+};
+
 // Outcome of a form-picker lookup, so the UI can explain WHY a picker is missing
 // instead of silently showing a blank manual field:
 //  - "ok"          → non-empty list, render the picker

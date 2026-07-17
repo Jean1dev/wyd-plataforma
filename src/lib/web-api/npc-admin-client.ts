@@ -7,6 +7,7 @@ import type {
   AdminNpcShopItem,
   AdminResult,
   ItemCatalogEntry,
+  ItemPrice,
   MapZone,
   MerchantTemplate,
 } from "@/lib/npc/types";
@@ -16,6 +17,7 @@ export type {
   AdminNpcShopItem,
   AdminResult,
   ItemCatalogEntry,
+  ItemPrice,
   MapZone,
   MerchantTemplate,
 } from "@/lib/npc/types";
@@ -51,6 +53,7 @@ export type LookupRequest = { moderator_id: string };
 export type ListMerchantTemplatesResponse = { result: AdminResult; templates: MerchantTemplate[] };
 export type ListItemCatalogResponse = { result: AdminResult; items: ItemCatalogEntry[] };
 export type ListMapZonesResponse = { result: AdminResult; zones: MapZone[] };
+export type ListItemPricesResponse = { result: AdminResult; prices: ItemPrice[] };
 
 type Cb<R> = (err: grpc.ServiceError | null, res: R) => void;
 
@@ -65,6 +68,7 @@ type NpcAdminClient = {
   ListMerchantTemplates(req: LookupRequest, cb: Cb<ListMerchantTemplatesResponse>): void;
   ListItemCatalog(req: LookupRequest, cb: Cb<ListItemCatalogResponse>): void;
   ListMapZones(req: LookupRequest, cb: Cb<ListMapZonesResponse>): void;
+  ListItemPrices(req: LookupRequest, cb: Cb<ListItemPricesResponse>): void;
 };
 
 type WebProto = {
@@ -104,6 +108,7 @@ export function npcAdminRpc(method: "DeleteNpc", req: DeleteNpcRequest): Promise
 export function npcAdminRpc(method: "ListMerchantTemplates", req: LookupRequest): Promise<ListMerchantTemplatesResponse>;
 export function npcAdminRpc(method: "ListItemCatalog", req: LookupRequest): Promise<ListItemCatalogResponse>;
 export function npcAdminRpc(method: "ListMapZones", req: LookupRequest): Promise<ListMapZonesResponse>;
+export function npcAdminRpc(method: "ListItemPrices", req: LookupRequest): Promise<ListItemPricesResponse>;
 export function npcAdminRpc(method: keyof NpcAdminClient, req: unknown): Promise<unknown> {
   const c = npcAdminClient();
 
