@@ -29,6 +29,7 @@ Browser ──HTTPS──> Next.js (Route Handlers = BFF)  ──gRPC+mTLS──
 | `PATCH /api/admin/npcs/:id/visibility` | `SetNpcVisibility` |
 | `PUT /api/admin/npcs/:id/shop` | `SetNpcShop` |
 | `PUT /api/admin/items/:index/price` | `SetItemPrice` |
+| `GET /api/admin/item-prices` | `ListItemPrices` |
 | `GET /api/admin/npc-templates` | `ListMerchantTemplates` |
 | `GET /api/admin/items` | `ListItemCatalog` |
 | `GET /api/admin/map-zones` | `ListMapZones` |
@@ -67,6 +68,9 @@ numérico) com aviso de validação — **não** é erro. `ListMapZones` nunca v
   `slot` único em `[0,26]`; `item_index > 0`.
 - **Preço**: `SetItemPrice(item_index, price)` é **global por item** (vale em todos
   os NPCs). `price >= 0` define o override; `price < 0` limpa e volta ao catálogo.
+  `ListItemPrices` devolve os overrides ativos (`item_index, price`) para popular a
+  tabela de preços no formulário — item ausente da lista = sem override, vale o
+  preço do catálogo. Não depende de `-content` (não é um lookup de catálogo).
 - **Propagação**: a escrita vai para o Postgres na hora, mas o jogo só reflete
   quando o **tmServer recarrega** (boot + poll ~15s). Requer o overlay ligado
   (`W2PP_NPC_EDITING=true`). A UI avisa o moderador disso após cada operação.
