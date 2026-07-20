@@ -60,6 +60,34 @@ export type ItemPrice = {
   price: number;
 };
 
+export type DropItemMob = {
+  template_name: string;
+  mob_name: string;
+  mob_level: number;
+  slot: number;
+  rate_divisor: number;
+};
+
+export type DropItemEntry = {
+  item_index: number;
+  item_name: string;
+  mobs: DropItemMob[];
+};
+
+export type MobDropItem = {
+  slot: number;
+  item_index: number;
+  item_name: string;
+  rate_divisor: number;
+};
+
+export type MobDropEntry = {
+  template_name: string;
+  mob_name: string;
+  mob_level: number;
+  items: MobDropItem[];
+};
+
 // Outcome of a form-picker lookup, so the UI can explain WHY a picker is missing
 // instead of silently showing a blank manual field:
 //  - "ok"          → non-empty list, render the picker

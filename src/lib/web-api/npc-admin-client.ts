@@ -6,20 +6,24 @@ import type {
   AdminNpc,
   AdminNpcShopItem,
   AdminResult,
+  DropItemEntry,
   ItemCatalogEntry,
   ItemPrice,
   MapZone,
   MerchantTemplate,
+  MobDropEntry,
 } from "@/lib/npc/types";
 
 export type {
   AdminNpc,
   AdminNpcShopItem,
   AdminResult,
+  DropItemEntry,
   ItemCatalogEntry,
   ItemPrice,
   MapZone,
   MerchantTemplate,
+  MobDropEntry,
 } from "@/lib/npc/types";
 
 export type ListNpcsRequest = { moderator_id: string };
@@ -55,6 +59,23 @@ export type ListItemCatalogResponse = { result: AdminResult; items: ItemCatalogE
 export type ListMapZonesResponse = { result: AdminResult; zones: MapZone[] };
 export type ListItemPricesResponse = { result: AdminResult; prices: ItemPrice[] };
 
+export type ListDropItemsRequest = {
+  moderator_id: string;
+  item_index: number;
+  item_query: string;
+  mob_query: string;
+  include_zero_drop_items: boolean;
+};
+export type ListDropItemsResponse = { result: AdminResult; items: DropItemEntry[] };
+
+export type ListMobDropsRequest = {
+  moderator_id: string;
+  mob_query: string;
+  item_index: number;
+  item_query: string;
+};
+export type ListMobDropsResponse = { result: AdminResult; mobs: MobDropEntry[] };
+
 type Cb<R> = (err: grpc.ServiceError | null, res: R) => void;
 
 type NpcAdminClient = {
@@ -69,6 +90,8 @@ type NpcAdminClient = {
   ListItemCatalog(req: LookupRequest, cb: Cb<ListItemCatalogResponse>): void;
   ListMapZones(req: LookupRequest, cb: Cb<ListMapZonesResponse>): void;
   ListItemPrices(req: LookupRequest, cb: Cb<ListItemPricesResponse>): void;
+  ListDropItems(req: ListDropItemsRequest, cb: Cb<ListDropItemsResponse>): void;
+  ListMobDrops(req: ListMobDropsRequest, cb: Cb<ListMobDropsResponse>): void;
 };
 
 type WebProto = {
@@ -109,6 +132,8 @@ export function npcAdminRpc(method: "ListMerchantTemplates", req: LookupRequest)
 export function npcAdminRpc(method: "ListItemCatalog", req: LookupRequest): Promise<ListItemCatalogResponse>;
 export function npcAdminRpc(method: "ListMapZones", req: LookupRequest): Promise<ListMapZonesResponse>;
 export function npcAdminRpc(method: "ListItemPrices", req: LookupRequest): Promise<ListItemPricesResponse>;
+export function npcAdminRpc(method: "ListDropItems", req: ListDropItemsRequest): Promise<ListDropItemsResponse>;
+export function npcAdminRpc(method: "ListMobDrops", req: ListMobDropsRequest): Promise<ListMobDropsResponse>;
 export function npcAdminRpc(method: keyof NpcAdminClient, req: unknown): Promise<unknown> {
   const c = npcAdminClient();
 
