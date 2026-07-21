@@ -57,7 +57,6 @@ export function usePriceOverrides(): PricesState {
 
   useEffect(() => {
     let active = true;
-    setState((s) => ({ ...s, loading: true }));
     loadItemPrices().then(({ prices, status }) => {
       if (active) setState({ prices, loading: false, status, available: status === "ok" });
     });
@@ -73,6 +72,7 @@ export function usePriceOverrides(): PricesState {
     available,
     refresh: () => {
       invalidateItemPriceCache();
+      setState((s) => ({ ...s, loading: true }));
       setReloadKey((k) => k + 1);
     },
   };
