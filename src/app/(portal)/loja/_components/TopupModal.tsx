@@ -10,11 +10,16 @@ type Props = {
   onBalance: (balance: string) => void;
 };
 
+type PaymentMethod = "pix" | "card";
+
 type Charge = {
+  method: PaymentMethod;
   externalReference: string;
-  qrCode: string | null;
-  pixCopiaECola: string | null;
   credits: number;
+  qrCode?: string | null;
+  pixCopiaECola?: string | null;
+  paymentLinkUrl?: string | null;
+  paymentLinkId?: string | null;
 };
 
 const POLL_INTERVAL_MS = 3000;
@@ -28,6 +33,7 @@ function qrSrc(qr: string): string {
 
 export function TopupModal({ onClose, onBalance }: Props) {
   const [selected, setSelected] = useState<TopupPackage>(TOPUP_PACKAGES[0]);
+  const [method, setMethod] = useState<PaymentMethod>("pix");
   const [name, setName] = useState("");
   const [cpf, setCpf] = useState("");
   const [needsProfile, setNeedsProfile] = useState(false);
@@ -36,7 +42,7 @@ export function TopupModal({ onClose, onBalance }: Props) {
   const [charge, setCharge] = useState<Charge | null>(null);
   const [busy, setBusy] = useState(false);
   const [paid, setPaid] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<PaymentMethod | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Prefill payer profile.
@@ -93,18 +99,26 @@ export function TopupModal({ onClose, onBalance }: Props) {
   async function generate() {
     setBusy(true);
     setError(null);
+    setCopied(null);
+    const paymentMethod = method;
+    const paymentWindow = paymentMethod === "card" ? window.open("", "_blank") : null;
+
     try {
-      const res = await fetch("/api/donate/topup", {
+      const res = await fetch(paymentMethod === "card" ? "/api/donate/topup/card" : "/api/donate/topup", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(
-          needsProfile ? { package_id: selected.id, name, cpf } : { package_id: selected.id },
+          paymentMethod === "pix" && needsProfile
+            ? { package_id: selected.id, name, cpf }
+            : { package_id: selected.id },
         ),
       });
       const data = (await res.json().catch(() => ({}))) as {
         external_reference?: string;
         qr_code?: string | null;
         pix_copia_e_cola?: string | null;
+        payment_link_url?: string | null;
+        payment_link_id?: string | null;
         credits?: number;
         error?: string;
       };
@@ -114,27 +128,52 @@ export function TopupModal({ onClose, onBalance }: Props) {
           throw new Error("Informe nome e CPF para continuar.");
         }
         if (res.status === 502) throw new Error("Serviço de pagamento indisponível. Tente novamente.");
-        throw new Error("Não foi possível gerar a cobrança PIX.");
+        throw new Error(
+          paymentMethod === "card"
+            ? "Não foi possível gerar o link de pagamento."
+            : "Não foi possível gerar a cobrança PIX.",
+        );
       }
+
+      if (paymentMethod === "card") {
+        const paymentLinkUrl = data.payment_link_url ?? "";
+        if (!paymentLinkUrl) {
+          throw new Error("Não foi possível gerar o link de pagamento.");
+        }
+        if (paymentWindow) {
+          paymentWindow.opener = null;
+          paymentWindow.location.href = paymentLinkUrl;
+        }
+        setCharge({
+          method: "card",
+          externalReference: String(data.external_reference),
+          paymentLinkUrl,
+          paymentLinkId: data.payment_link_id ?? null,
+          credits: Number(data.credits ?? selected.credits),
+        });
+        return;
+      }
+
       setCharge({
+        method: "pix",
         externalReference: String(data.external_reference),
         qrCode: data.qr_code ?? null,
         pixCopiaECola: data.pix_copia_e_cola ?? null,
         credits: Number(data.credits ?? selected.credits),
       });
     } catch (err) {
+      if (paymentWindow && !paymentWindow.closed) paymentWindow.close();
       setError((err as Error).message);
     } finally {
       setBusy(false);
     }
   }
 
-  async function copyCode() {
-    if (!charge?.pixCopiaECola) return;
+  async function copyText(value: string, copiedMethod: PaymentMethod) {
     try {
-      await navigator.clipboard.writeText(charge.pixCopiaECola);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      await navigator.clipboard.writeText(value);
+      setCopied(copiedMethod);
+      setTimeout(() => setCopied(null), 2000);
     } catch {
       /* ignore */
     }
@@ -190,26 +229,60 @@ export function TopupModal({ onClose, onBalance }: Props) {
           </div>
         ) : charge ? (
           <div style={{ display: "grid", gap: 14, textAlign: "center" }}>
-            <div style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-muted)" }}>
-              Escaneie o QR Code ou use o PIX copia e cola. A confirmação é automática.
-            </div>
-            {charge.qrCode ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={qrSrc(charge.qrCode)}
-                alt="QR Code PIX"
-                style={{
-                  width: 220,
-                  height: 220,
-                  margin: "0 auto",
-                  background: "#fff",
-                  borderRadius: "var(--radius-sm)",
-                  padding: 8,
-                }}
-              />
-            ) : null}
-            {charge.pixCopiaECola ? (
-              <div style={{ display: "grid", gap: 8 }}>
+            {charge.method === "pix" ? (
+              <>
+                <div style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-muted)" }}>
+                  Escaneie o QR Code ou use o PIX copia e cola. A confirmação é automática.
+                </div>
+                {charge.qrCode ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={qrSrc(charge.qrCode)}
+                    alt="QR Code PIX"
+                    style={{
+                      width: 220,
+                      height: 220,
+                      margin: "0 auto",
+                      background: "#fff",
+                      borderRadius: "var(--radius-sm)",
+                      padding: 8,
+                    }}
+                  />
+                ) : null}
+                {charge.pixCopiaECola ? (
+                  <div style={{ display: "grid", gap: 8 }}>
+                    <div
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: 11,
+                        color: "var(--text-muted)",
+                        wordBreak: "break-all",
+                        background: "var(--surface-inset)",
+                        boxShadow: "var(--bevel-in)",
+                        borderRadius: "var(--radius-sm)",
+                        padding: 10,
+                        maxHeight: 90,
+                        overflowY: "auto",
+                      }}
+                    >
+                      {charge.pixCopiaECola}
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => copyText(String(charge.pixCopiaECola), "pix")}
+                    >
+                      {copied === "pix" ? "Copiado!" : "Copiar código PIX"}
+                    </Button>
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <div style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-muted)" }}>
+                  Finalize o pagamento no Stripe. Use o link abaixo se a nova guia não abriu.
+                </div>
                 <div
                   style={{
                     fontFamily: "var(--font-mono)",
@@ -224,19 +297,72 @@ export function TopupModal({ onClose, onBalance }: Props) {
                     overflowY: "auto",
                   }}
                 >
-                  {charge.pixCopiaECola}
+                  {charge.paymentLinkUrl}
                 </div>
-                <Button type="button" size="sm" variant="ghost" onClick={copyCode}>
-                  {copied ? "Copiado!" : "Copiar código PIX"}
-                </Button>
-              </div>
-            ) : null}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8 }}>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      if (charge.paymentLinkUrl) window.open(charge.paymentLinkUrl, "_blank", "noopener,noreferrer");
+                    }}
+                  >
+                    Abrir link
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      if (charge.paymentLinkUrl) copyText(charge.paymentLinkUrl, "card");
+                    }}
+                  >
+                    {copied === "card" ? "Copiado!" : "Copiar link"}
+                  </Button>
+                </div>
+              </>
+            )}
             <div style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-muted)" }}>
               Aguardando pagamento…
             </div>
           </div>
         ) : (
           <div style={{ display: "grid", gap: 14 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8 }}>
+              {(
+                [
+                  ["pix", "PIX"],
+                  ["card", "Cartão"],
+                ] as const
+              ).map(([value, label]) => {
+                const active = method === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => {
+                      setMethod(value);
+                      setCopied(null);
+                      setError(null);
+                    }}
+                    style={{
+                      padding: "10px 12px",
+                      cursor: "pointer",
+                      textAlign: "center",
+                      background: active ? "var(--surface-inset)" : "transparent",
+                      border: `1px solid ${active ? "var(--gold-400)" : "var(--iron-400)"}`,
+                      borderRadius: "var(--radius-sm)",
+                      color: active ? "var(--gold-300)" : "var(--parchment-100)",
+                      fontFamily: "var(--font-body)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
             <div style={{ display: "grid", gap: 8 }}>
               {TOPUP_PACKAGES.map((p) => {
                 const active = p.id === selected.id;
@@ -278,7 +404,7 @@ export function TopupModal({ onClose, onBalance }: Props) {
               })}
             </div>
 
-            {profileLoaded && needsProfile ? (
+            {method === "pix" && profileLoaded && needsProfile ? (
               <div style={{ display: "grid", gap: 10 }}>
                 <div style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-muted)" }}>
                   Precisamos do nome e CPF do pagador (salvos para as próximas recargas).
@@ -294,8 +420,10 @@ export function TopupModal({ onClose, onBalance }: Props) {
               </div>
             ) : null}
 
-            <Button type="button" disabled={busy || !profileLoaded} onClick={generate}>
-              {busy ? "Gerando…" : `Pagar ${formatBRL(selected.amountCents)} com PIX`}
+            <Button type="button" disabled={busy || (method === "pix" && !profileLoaded)} onClick={generate}>
+              {busy
+                ? "Gerando…"
+                : `Pagar ${formatBRL(selected.amountCents)} com ${method === "pix" ? "PIX" : "cartão"}`}
             </Button>
           </div>
         )}
