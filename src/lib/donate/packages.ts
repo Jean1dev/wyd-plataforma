@@ -6,12 +6,31 @@ export type TopupPackage = {
   label: string;
   amountCents: number;
   credits: number;
+  stripePriceId: string;
 };
 
 export const TOPUP_PACKAGES: readonly TopupPackage[] = [
-  { id: "p10", label: "Recarga Bronze", amountCents: 1000, credits: 10 },
-  { id: "p25", label: "Recarga Prata", amountCents: 2500, credits: 30 },
-  { id: "p50", label: "Recarga Ouro", amountCents: 5000, credits: 70 },
+  {
+    id: "p10",
+    label: "Recarga Bronze",
+    amountCents: 1000,
+    credits: 10,
+    stripePriceId: "price_1Tvjp2G7OpCiJ6QLFwrreEMn",
+  },
+  {
+    id: "p25",
+    label: "Recarga Prata",
+    amountCents: 2500,
+    credits: 30,
+    stripePriceId: "price_1TvjpbG7OpCiJ6QLVEPdAGGY",
+  },
+  {
+    id: "p50",
+    label: "Recarga Ouro",
+    amountCents: 5000,
+    credits: 70,
+    stripePriceId: "price_1TvjpwG7OpCiJ6QLNmCrRBbQ",
+  },
 ];
 
 export function getTopupPackage(id: string): TopupPackage | undefined {

@@ -41,7 +41,7 @@ export function ShopGrid({ items, initialBalance }: { items: DonateShopItem[]; i
             cheio, o item pode ser perdido.
           </div>
           <Button type="button" size="sm" onClick={() => setTopupOpen(true)}>
-            Recarregar créditos (PIX)
+            Recarregar créditos
           </Button>
         </div>
       </div>
