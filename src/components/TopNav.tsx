@@ -27,7 +27,9 @@ export function TopNav({ userName, isModerator = false, donateBalance }: TopNavP
     ? [
         ...NAV_LINKS,
         { href: "/admin/npcs", label: "Admin NPCs" } as const,
+        { href: "/admin/mob-templates", label: "Admin Stats de Mob" } as const,
         { href: "/admin/drops", label: "Admin Drops" } as const,
+        { href: "/admin/world-events", label: "Admin Eventos" } as const,
         { href: "/admin/attribute-map", label: "Admin AttributeMap" } as const,
         { href: "/admin/donate", label: "Admin Donate" } as const,
         { href: "/admin/daily-reward", label: "Admin Recompensa Diária" } as const,

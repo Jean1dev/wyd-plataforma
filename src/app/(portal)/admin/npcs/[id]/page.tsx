@@ -1,40 +1,12 @@
-import type { ReactNode } from "react";
 import Link from "next/link";
 import { getNpc, listMapZones, listMerchantTemplates } from "../_data";
 import { NpcForm } from "../_components/NpcForm";
 import { ShopEditor } from "../_components/ShopEditor";
 import { PriceEditor } from "../_components/PriceEditor";
 import { DeleteNpcButton } from "../_components/DeleteNpcButton";
-import { AdminHeader, StateNotice } from "../_components/StateNotice";
+import { AdminHeader, Section, StateNotice } from "../_components/StateNotice";
 
 const wrap: React.CSSProperties = { maxWidth: 1320, margin: "0 auto", padding: "32px 24px 72px" };
-
-function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
-  return (
-    <section
-      style={{
-        background: "var(--grad-panel)",
-        border: "1px solid var(--iron-400)",
-        borderRadius: "var(--radius-lg)",
-        boxShadow: "var(--bevel-raise), var(--shadow-md)",
-        padding: "24px",
-        marginBottom: 20,
-      }}
-    >
-      <h2 style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "var(--parchment-100)", margin: "0 0 4px" }}>
-        {title}
-      </h2>
-      {description ? (
-        <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-muted)", margin: "0 0 16px" }}>
-          {description}
-        </p>
-      ) : (
-        <div style={{ height: 12 }} />
-      )}
-      {children}
-    </section>
-  );
-}
 
 export default async function EditNpcPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

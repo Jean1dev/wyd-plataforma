@@ -6,6 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `pnpm dev` — run the dev server (Turbopack, Cache Components enabled).
 - `pnpm build` — production build; runs the TypeScript check as part of the build (no separate typecheck script).
+- `npx tsc --noEmit -p tsconfig.json` — fast typecheck-only proxy while iterating (no separate script); still run `pnpm build` as the real gate before finishing.
 - `pnpm lint` — ESLint (`eslint-config-next` core-web-vitals + typescript).
 - There is no test script/framework configured in this repo.
 
@@ -23,6 +24,7 @@ Browser ──HTTP──> Next.js Route Handlers (BFF) ──gRPC(+mTLS)──> 
 - `src/lib/web-api/channel.ts` loads `proto/web.proto` dynamically at runtime via `@grpc/proto-loader` (no `protoc` codegen step) and owns channel credentials:
   - `WEB_API_ADDR` (default `localhost:7600`), `WEB_API_INSECURE=1` for local/insecure dev.
   - mTLS client cert (`WEB_API_CA` / `WEB_API_CLIENT_KEY` / `WEB_API_CLIENT_CRT`) is only used for a **direct** link to the webserver (e.g. local docker-compose). Behind Railway's public HTTPS edge there's no client cert to present, so plain SSL is used instead — see comments in `channel.ts`.
+  - proto-loader is configured with `longs: String`, so every `int64` field (not `int32`) surfaces as a JS `string` at the client boundary (e.g. `AdminNpc.id`, `UpsertNpcResponse.npc_id`) — match this in hand-written request/response types or it's a silent type-vs-wire mismatch.
 - Each gRPC service has its own thin client module under `src/lib/web-api/` (`client.ts` for `AccountWebService`, `character-client.ts` for `CharacterWebService`, `npc-admin-client.ts` for `NpcAdminService`), each wrapping the callback-style `@grpc/grpc-js` stub in a `Promise`-returning `rpc()`/`*Rpc()` function. Follow this pattern for new services rather than introducing a different client style.
 - Route Handlers call these `rpc()` functions directly; business outcomes (e.g. `AdminResult`, `CreateResult`) travel in the response body and are mapped to HTTP status by convention (see `admin-http.ts`), while actual gRPC rejections (infra failures) always become **502**. gRPC error codes are never surfaced as arbitrary passthrough statuses.
 
@@ -37,9 +39,12 @@ Browser ──HTTP──> Next.js Route Handlers (BFF) ──gRPC(+mTLS)──> 
 
 - `src/app/(portal)/dashboard` — reads `CharacterWebService.ListMyCharacters`, normalized via `character-normalize.ts` into a view model (`CharacterSummaryView`) for display.
 - `src/app/(portal)/admin/npcs` + `src/app/api/admin/**` — moderator-only NPC editing UI/BFF over `NpcAdminService`. This is the most involved feature; **read `docs/admin-npc-editing.md` before touching it** — it documents the REST↔RPC route table, domain semantics (merchant types, shop slot layout, global item pricing), the read-only picker RPCs (`ListMerchantTemplates`/`ListItemCatalog`/`ListMapZones`) and their "empty list is a valid response" contract (depends on whether `webserver` was started with content mounted), and the operational prerequisites (migrations, moderator role seeding, tmServer overlay flag).
+- Every other `admin/<feature>` (`donate`, `world-events`, `attribute-map`, `drops`, `daily-reward`, `mob-templates`, …) replicates `admin/npcs`'s exact shape: one `*AdminService` in `proto/web.proto`, a sibling `<feature>-admin-client.ts`, Route Handlers on the `requireModerator → assertSameOrigin → parse → rpc → admin-http.ts` skeleton, and `_data.ts` (server-side reads) + `_components/api.ts` (wraps `admin/_shared/api-client.ts`). Copy this shape for new admin features rather than inventing one.
+- `admin/npcs/_components/{Combobox,StateNotice,PickerNote,catalog}.tsx` are the de facto shared UI kit for all admin features — imported cross-feature by relative path (not duplicated, not promoted to `_shared`).
 - `src/app/api/login`, `signup`, `logout` — thin wrappers over `AccountWebService`.
 
 ### Next.js specifics
 
 - `cacheComponents: true` is enabled in `next.config.ts` (Next 16 Cache Components / PPR). Two project-local agent skills document how to work with this: `.agents/skills/next-cache-components-adoption` and `.agents/skills/next-cache-components-optimizer`.
+- Dynamic route segments (`[id]`, `[name]`) are already URL-decoded by the App Router into `params` — don't call `decodeURIComponent` again on top of that (double-decodes a value containing a literal `%`).
 - All gRPC/session code is marked `"server-only"` and must stay server-side (Route Handlers / Server Components) — the browser never sees `web-api` addresses or credentials.

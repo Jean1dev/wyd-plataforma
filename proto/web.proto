@@ -218,6 +218,39 @@ message AdminAck {
   AdminResult result = 1;
 }
 
+service WorldEventAdminService {
+  rpc GetWorldEventConfig(GetWorldEventConfigRequest) returns (GetWorldEventConfigResponse);
+  rpc SetWorldEventConfig(SetWorldEventConfigRequest) returns (AdminAck);
+}
+
+message WorldEventConfig {
+  bool enabled = 1;
+  int32 item_index = 2;
+  int32 rate = 3;
+  int32 start_index = 4;
+  int32 current_index = 5;
+  int32 end_index = 6;
+  bool indexed = 7;
+  bool notice_enabled = 8;
+  bool double_exp_enabled = 9;
+  bool newbie_event_enabled = 10;
+}
+
+message GetWorldEventConfigRequest {
+  int64 moderator_id = 1;
+}
+
+message GetWorldEventConfigResponse {
+  AdminResult result = 1;
+  int64 version = 2;
+  WorldEventConfig config = 3;
+}
+
+message SetWorldEventConfigRequest {
+  int64 moderator_id = 1;
+  WorldEventConfig config = 2;
+}
+
 // A merchant template found under Release/TMsrv/run/npc/ (merchant != 0).
 // Backs the template_name combobox. An empty templates list is valid.
 message MerchantTemplate {
@@ -317,6 +350,135 @@ message MobDropItem {
   int32 item_index = 2;
   string item_name = 3;
   int32 rate_divisor = 4;
+}
+
+// MobTemplateAdminService lets moderators edit combat stats (level, HP/MP,
+// attributes, EXP, skills, equipment) of npc/<template_name> template files —
+// everything EXCEPT shop stock (NpcAdminService.SetNpcShop) and the
+// DB-managed spawn position (NpcAdminService.UpsertNpc). Mirrors the legacy
+// Win32 EDITAPPMOB tool. tmServer only applies overrides at boot
+// (-mob-stat-editing flag) — there is no hot reload.
+service MobTemplateAdminService {
+  rpc ListMobTemplates(ListMobTemplatesRequest) returns (ListMobTemplatesResponse);
+  rpc GetMobTemplateStat(GetMobTemplateStatRequest) returns (GetMobTemplateStatResponse);
+  rpc UpsertMobTemplateStat(UpsertMobTemplateStatRequest) returns (AdminAck);
+  rpc SetMobTemplateEquip(SetMobTemplateEquipRequest) returns (AdminAck);
+  rpc DeleteMobTemplateStat(DeleteMobTemplateStatRequest) returns (AdminAck);
+}
+
+// Every file under Release/TMsrv/run/npc/, NOT filtered by merchant type
+// (unlike ListMerchantTemplates). Backs the template_name picker. Empty list
+// is valid (web-api without -content/W2PP_CONTENT).
+message MobTemplateFile {
+  string template_name = 1; // exact filename under npc/, the key
+  string display_name  = 2; // template mob.Name, display-only
+  int32  merchant       = 3; // raw CurrentScore.Merchant, informational only
+}
+message ListMobTemplatesRequest { int64 moderator_id = 1; }
+message ListMobTemplatesResponse {
+  AdminResult result = 1;
+  repeated MobTemplateFile templates = 2;
+}
+
+// One of Equip[16] (MAX_EQUIP) on the mob template.
+message AdminMobTemplateEquipItem {
+  int32 slot       = 1; // 0-15, no duplicates
+  int32 item_index = 2; // must be > 0
+  int32 eff1 = 3; int32 effv1 = 4; // 0 = no effect
+  int32 eff2 = 5; int32 effv2 = 6;
+  int32 eff3 = 7; int32 effv3 = 8;
+}
+
+// Full combat-stat form. Returned whole by GetMobTemplateStat, written whole
+// by UpsertMobTemplateStat (full replace, not partial). equip is read here
+// but written only via SetMobTemplateEquip.
+message AdminMobTemplateStat {
+  string template_name = 1;
+  bool   overridden    = 2; // GetMobTemplateStat only; false = read-through from raw file, normal state
+
+  // Identidade
+  string display_name = 3;
+  int32  clan          = 4;
+  int32  merchant       = 5; // raw STRUCT_MOB.Merchant — distinct from AdminNpc.merchant, label separately in UI
+  int32  class          = 6;
+
+  // Economia
+  int32 coin = 7;
+  int64 exp  = 8; // warn client-side if 0 or >10,000,000 when level>=1 && merchant==0
+
+  // Posição (template-embedded; NOT npc_definition pos_x/pos_y)
+  int32 spx = 9;
+  int32 spy = 10;
+
+  // Combate
+  int32 level      = 11;
+  int32 ac         = 12;
+  int32 damage     = 13;
+  int32 chaos_rate = 14;
+  int32 attack_run = 15;
+  int32 direction  = 16; // 0-7
+
+  // Atributos
+  int32 str      = 17;
+  int32 intel    = 18; // "int" is reserved
+  int32 dex      = 19;
+  int32 con      = 20;
+  int32 special1 = 21;
+  int32 special2 = 22;
+  int32 special3 = 23;
+  int32 special4 = 24;
+
+  // Combate (vida)
+  int32 max_hp = 25;
+  int32 hp     = 26;
+  int32 max_mp = 27;
+  int32 mp     = 28;
+
+  // Skills
+  int32 learned_skill = 29;
+  int32 score_bonus   = 30;
+  int32 skill_bar1    = 31;
+  int32 skill_bar2    = 32;
+  int32 skill_bar3    = 33;
+  int32 skill_bar4    = 34;
+  int32 regen_hp      = 35;
+  int32 regen_mp      = 36;
+  int32 resist1       = 37; // signed, negative valid
+  int32 resist2       = 38;
+  int32 resist3       = 39;
+  int32 resist4       = 40;
+
+  repeated AdminMobTemplateEquipItem equip = 41;
+}
+
+message GetMobTemplateStatRequest {
+  int64  moderator_id  = 1;
+  string template_name = 2;
+}
+message GetMobTemplateStatResponse {
+  AdminResult result = 1;
+  AdminMobTemplateStat stat = 2;
+}
+
+message UpsertMobTemplateStatRequest {
+  int64 moderator_id = 1;
+  AdminMobTemplateStat stat = 2;
+}
+
+// Replaces the whole 16-slot equip list (full replace). Requires an override
+// to already exist (Upsert stats first if overridden==false), else
+// NOT_FOUND. INVALID if slot out of 0-15, item_index<=0, or duplicate slot.
+message SetMobTemplateEquipRequest {
+  int64  moderator_id  = 1;
+  string template_name = 2;
+  repeated AdminMobTemplateEquipItem items = 3;
+}
+
+// Removes the override; reverts read-through to the raw file. Never touches
+// the npc/ file itself.
+message DeleteMobTemplateStatRequest {
+  int64  moderator_id  = 1;
+  string template_name = 2;
 }
 
 // AttributeMapAdminService is the moderator-facing replacement for the legacy
