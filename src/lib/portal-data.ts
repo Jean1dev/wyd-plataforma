@@ -94,19 +94,36 @@ export type Client = {
   tag: string;
   btnVariant: "primary" | "steel" | "ghost";
   btnLabel: string;
+  href?: string;
 };
 
+export const CLIENT_DOWNLOAD_URL = "https://transfer.it/t/vr1J7tkXmJLK";
+
 export const CLIENTS: Client[] = [
-  { os: "Cliente Completo", sub: "Windows · 4.2 GB", icon: "⊞", tag: "Recomendado", btnVariant: "primary", btnLabel: "Baixar para Windows" },
+  {
+    os: "Cliente Completo",
+    sub: "Windows · acesso temporário",
+    icon: "⊞",
+    tag: "Recomendado",
+    btnVariant: "primary",
+    btnLabel: "Baixar client",
+    href: CLIENT_DOWNLOAD_URL,
+  },
   { os: "Launcher Leve", sub: "Windows · 80 MB", icon: "⬇", tag: "", btnVariant: "steel", btnLabel: "Baixar Launcher" },
   { os: "Patch Manual", sub: "Atualização · 320 MB", icon: "⟳", tag: "", btnVariant: "ghost", btnLabel: "Baixar Patch" },
 ];
 
+export const ACCESS_COMMAND =
+  "netsh interface portproxy add v4tov4 listenaddress=127.0.0.1 listenport=8281 connectaddress=66.33.22.224 connectport=56950";
+
+export const REMOVE_ACCESS_COMMAND =
+  "netsh interface portproxy delete v4tov4 listenaddress=127.0.0.1 listenport=8281";
+
 export const STEPS = [
-  { n: 1, title: "Crie sua conta", desc: "Cadastre-se no portal em menos de um minuto." },
-  { n: 2, title: "Baixe o cliente", desc: "Escolha o cliente completo ou o launcher leve." },
-  { n: 3, title: "Instale e atualize", desc: "Rode o launcher e aplique o patch mais recente." },
-  { n: 4, title: "Entre no reino", desc: "Crie seu personagem e comece sua jornada em Kersef." },
+  { n: 1, title: "Baixe o client", desc: "Use o link temporário disponível nesta página." },
+  { n: 2, title: "Abra o terminal", desc: "No Windows, abra o Terminal ou PowerShell como administrador." },
+  { n: 3, title: "Rode o comando de acesso", desc: "Execute o comando de portproxy antes de entrar no jogo." },
+  { n: 4, title: "Remova quando terminar", desc: "Depois de jogar, rode o comando de remoção se quiser desfazer o ajuste." },
 ];
 
 export const REQ_MIN = ["Windows 7 64-bit", "Core i3 / equivalente", "4 GB de RAM", "DirectX 9.0c", "5 GB livres"];
