@@ -1,6 +1,14 @@
 import type { CSSProperties } from "react";
 import { Button, Badge } from "@/components/ui";
-import { CLIENTS, STEPS, REQ_MIN, REQ_REC } from "@/lib/portal-data";
+import {
+  ACCESS_COMMAND,
+  CLIENT_DOWNLOAD_URL,
+  CLIENTS,
+  REMOVE_ACCESS_COMMAND,
+  REQ_MIN,
+  REQ_REC,
+  STEPS,
+} from "@/lib/portal-data";
 
 const panel: CSSProperties = {
   background: "var(--grad-panel)",
@@ -15,6 +23,21 @@ const sectionTitle: CSSProperties = {
   fontSize: 22,
   color: "var(--gold-400)",
   margin: "0 0 14px",
+};
+
+const commandBox: CSSProperties = {
+  display: "block",
+  padding: "12px 14px",
+  borderRadius: "var(--radius-md)",
+  background: "var(--surface-inset)",
+  border: "1px solid var(--iron-400)",
+  boxShadow: "var(--bevel-in)",
+  fontFamily: "var(--font-mono)",
+  fontSize: 12,
+  lineHeight: 1.55,
+  color: "var(--parchment-100)",
+  whiteSpace: "pre-wrap",
+  overflowWrap: "anywhere",
 };
 
 export default function DownloadPage() {
@@ -50,6 +73,59 @@ export default function DownloadPage() {
         O cliente roda em <strong style={{ color: "var(--gold-300)" }}>Windows (PC)</strong>.
         Acompanhe sua conta, ranking e recompensas de qualquer dispositivo — o portal é responsivo.
       </p>
+
+      <div
+        style={{
+          ...panel,
+          padding: 22,
+          marginBottom: 24,
+          border: "2px solid var(--gold-600)",
+          boxShadow: "var(--glow-gold), var(--shadow-md)",
+        }}
+      >
+        <div style={{ display: "flex", gap: 18, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <div style={{ flex: "1 1 360px", minWidth: 0 }}>
+            <Badge variant="gold" style={{ marginBottom: 12 }}>
+              Acesso temporário
+            </Badge>
+            <h2 style={{ ...sectionTitle, marginBottom: 8 }}>Informações de acesso</h2>
+            <p
+              style={{
+                fontFamily: "var(--font-body)",
+                fontSize: 15,
+                lineHeight: 1.55,
+                color: "var(--parchment-200)",
+                margin: 0,
+                maxWidth: 720,
+              }}
+            >
+              O jogo ainda não está em uma fase estável, mas estamos trabalhando para deixar tudo 100%.
+              No momento, use o client abaixo e rode o comando de acesso no Terminal ou PowerShell do Windows
+              como administrador antes de jogar.
+            </p>
+          </div>
+          <div style={{ flex: "0 1 220px", minWidth: 180 }}>
+            <Button href={CLIENT_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" block>
+              Baixar client
+            </Button>
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gap: 14, marginTop: 20 }}>
+          <div>
+            <div className="wyd-eyebrow" style={{ marginBottom: 8, color: "var(--gold-400)" }}>
+              Comando para conectar
+            </div>
+            <code style={commandBox}>{ACCESS_COMMAND}</code>
+          </div>
+          <div>
+            <div className="wyd-eyebrow" style={{ marginBottom: 8, color: "var(--text-muted)" }}>
+              Para remover depois
+            </div>
+            <code style={commandBox}>{REMOVE_ACCESS_COMMAND}</code>
+          </div>
+        </div>
+      </div>
 
       {/* Clients */}
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 40 }}>
@@ -106,9 +182,15 @@ export default function DownloadPage() {
               </div>
             </div>
             {d.tag ? <Badge variant="gold">{d.tag}</Badge> : null}
-            <Button block variant={d.btnVariant}>
-              {d.btnLabel}
-            </Button>
+            {d.href ? (
+              <Button href={d.href} target="_blank" rel="noopener noreferrer" block variant={d.btnVariant}>
+                {d.btnLabel}
+              </Button>
+            ) : (
+              <Button block variant={d.btnVariant} disabled>
+                {d.btnLabel}
+              </Button>
+            )}
           </div>
         ))}
       </div>
