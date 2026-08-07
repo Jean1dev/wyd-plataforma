@@ -3,12 +3,12 @@ import { Button, Badge } from "@/components/ui";
 import {
   ACCESS_COMMAND,
   CLIENT_DOWNLOAD_URL,
-  CLIENTS,
   REMOVE_ACCESS_COMMAND,
   REQ_MIN,
   REQ_REC,
   STEPS,
 } from "@/lib/portal-data";
+import { CopyCommand } from "./_components/CopyCommand";
 
 const panel: CSSProperties = {
   background: "var(--grad-panel)",
@@ -23,21 +23,6 @@ const sectionTitle: CSSProperties = {
   fontSize: 22,
   color: "var(--gold-400)",
   margin: "0 0 14px",
-};
-
-const commandBox: CSSProperties = {
-  display: "block",
-  padding: "12px 14px",
-  borderRadius: "var(--radius-md)",
-  background: "var(--surface-inset)",
-  border: "1px solid var(--iron-400)",
-  boxShadow: "var(--bevel-in)",
-  fontFamily: "var(--font-mono)",
-  fontSize: 12,
-  lineHeight: 1.55,
-  color: "var(--parchment-100)",
-  whiteSpace: "pre-wrap",
-  overflowWrap: "anywhere",
 };
 
 export default function DownloadPage() {
@@ -78,7 +63,7 @@ export default function DownloadPage() {
         style={{
           ...panel,
           padding: 22,
-          marginBottom: 24,
+          marginBottom: 40,
           border: "2px solid var(--gold-600)",
           boxShadow: "var(--glow-gold), var(--shadow-md)",
         }}
@@ -112,87 +97,9 @@ export default function DownloadPage() {
         </div>
 
         <div style={{ display: "grid", gap: 14, marginTop: 20 }}>
-          <div>
-            <div className="wyd-eyebrow" style={{ marginBottom: 8, color: "var(--gold-400)" }}>
-              Comando para conectar
-            </div>
-            <code style={commandBox}>{ACCESS_COMMAND}</code>
-          </div>
-          <div>
-            <div className="wyd-eyebrow" style={{ marginBottom: 8, color: "var(--text-muted)" }}>
-              Para remover depois
-            </div>
-            <code style={commandBox}>{REMOVE_ACCESS_COMMAND}</code>
-          </div>
+          <CopyCommand label="Comando para conectar" command={ACCESS_COMMAND} />
+          <CopyCommand label="Para remover depois" command={REMOVE_ACCESS_COMMAND} tone="muted" />
         </div>
-      </div>
-
-      {/* Clients */}
-      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 40 }}>
-        {CLIENTS.map((d) => (
-          <div
-            key={d.os}
-            style={{
-              flex: "1 1 280px",
-              minWidth: 0,
-              display: "flex",
-              flexDirection: "column",
-              gap: 16,
-              padding: 22,
-              borderRadius: "var(--radius-lg)",
-              background: "var(--grad-panel)",
-              border: d.tag ? "2px solid var(--gold-600)" : "1px solid var(--iron-400)",
-              boxShadow: d.tag
-                ? "var(--glow-gold), var(--shadow-md)"
-                : "var(--bevel-raise), var(--shadow-md)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <span
-                style={{
-                  width: 48,
-                  height: 48,
-                  flex: "none",
-                  borderRadius: "var(--radius-md)",
-                  background: "var(--surface-inset)",
-                  boxShadow: "var(--bevel-in)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 24,
-                  color: "var(--gold-400)",
-                }}
-              >
-                {d.icon}
-              </span>
-              <div>
-                <div
-                  style={{
-                    fontFamily: "var(--font-display)",
-                    fontWeight: 700,
-                    fontSize: 19,
-                    color: "var(--parchment-100)",
-                  }}
-                >
-                  {d.os}
-                </div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-faint)" }}>
-                  {d.sub}
-                </div>
-              </div>
-            </div>
-            {d.tag ? <Badge variant="gold">{d.tag}</Badge> : null}
-            {d.href ? (
-              <Button href={d.href} target="_blank" rel="noopener noreferrer" block variant={d.btnVariant}>
-                {d.btnLabel}
-              </Button>
-            ) : (
-              <Button block variant={d.btnVariant} disabled>
-                {d.btnLabel}
-              </Button>
-            )}
-          </div>
-        ))}
       </div>
 
       <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>

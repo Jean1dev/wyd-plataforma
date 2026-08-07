@@ -87,31 +87,7 @@ export const NEWS = [
   { date: "20 jun", title: "Correção de balanceamento das classes" },
 ];
 
-export type Client = {
-  os: string;
-  sub: string;
-  icon: string;
-  tag: string;
-  btnVariant: "primary" | "steel" | "ghost";
-  btnLabel: string;
-  href?: string;
-};
-
 export const CLIENT_DOWNLOAD_URL = "https://transfer.it/t/vr1J7tkXmJLK";
-
-export const CLIENTS: Client[] = [
-  {
-    os: "Cliente Completo",
-    sub: "Windows · acesso temporário",
-    icon: "⊞",
-    tag: "Recomendado",
-    btnVariant: "primary",
-    btnLabel: "Baixar client",
-    href: CLIENT_DOWNLOAD_URL,
-  },
-  { os: "Launcher Leve", sub: "Windows · 80 MB", icon: "⬇", tag: "", btnVariant: "steel", btnLabel: "Baixar Launcher" },
-  { os: "Patch Manual", sub: "Atualização · 320 MB", icon: "⟳", tag: "", btnVariant: "ghost", btnLabel: "Baixar Patch" },
-];
 
 export const ACCESS_COMMAND =
   "netsh interface portproxy add v4tov4 listenaddress=127.0.0.1 listenport=8281 connectaddress=66.33.22.224 connectport=56950";
