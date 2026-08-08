@@ -11,6 +11,12 @@ type Props = {
   onChange: (value: string) => void;
   /** Fired when an option is picked (lets the caller derive extra fields, e.g. merchant). */
   onSelect?: (opt: ComboOption) => void;
+  /**
+   * Fired on every keystroke in the search box. Only needed when `options` come
+   * from a remote search instead of a preloaded catalog (see the faturamento
+   * account filter); the local filtering below still applies on top.
+   */
+  onQueryChange?: (query: string) => void;
   options: ComboOption[];
   /** false → the picker is unavailable; render only the manual field. */
   available: boolean;
@@ -49,6 +55,7 @@ export function Combobox({
   value,
   onChange,
   onSelect,
+  onQueryChange,
   options,
   available,
   loading,
@@ -67,6 +74,11 @@ export function Combobox({
 
   const selected = useMemo(() => options.find((o) => o.value === value), [options, value]);
 
+  function changeQuery(next: string) {
+    setQuery(next);
+    onQueryChange?.(next);
+  }
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const base = q
@@ -80,7 +92,7 @@ export function Combobox({
   function pick(opt: ComboOption) {
     onChange(opt.value);
     onSelect?.(opt);
-    setQuery("");
+    changeQuery("");
     setFocused(false);
   }
 
@@ -157,12 +169,12 @@ export function Combobox({
               onChange(e.target.value);
               return;
             }
-            setQuery(e.target.value);
+            changeQuery(e.target.value);
           }}
           onFocus={() => {
             if (!available) return;
             if (blurTimer.current) clearTimeout(blurTimer.current);
-            setQuery("");
+            changeQuery("");
             setFocused(true);
           }}
           onBlur={() => {
@@ -214,7 +226,7 @@ export function Combobox({
           value={query}
           placeholder={loading ? "Carregando…" : placeholder}
           disabled={disabled || loading}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => changeQuery(e.target.value)}
           onFocus={() => {
             if (blurTimer.current) clearTimeout(blurTimer.current);
             setFocused(true);
