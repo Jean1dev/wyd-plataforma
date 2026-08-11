@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Badge, Button } from "@/components/ui";
 import { MERCHANT_TYPES } from "@/lib/npc/domain";
+import { CITY_REGION_NAMES, regionFor, regionLabel } from "@/lib/npc/regions";
 import type { AdminNpc } from "@/lib/npc/types";
 import { errorMessage, setVisibility } from "./api";
 
@@ -11,8 +12,25 @@ function merchantLabel(v: number) {
   return MERCHANT_TYPES.find((m) => m.value === v)?.label ?? `#${v}`;
 }
 
-function Row({ npc }: { npc: AdminNpc }) {
-  const [enabled, setEnabled] = useState(npc.enabled);
+// Tab keys that aren't region names. Prefixed so they can never collide with a
+// name coming out of Regions.txt.
+const ALL_TAB = "__all__";
+const NO_REGION_TAB = "__no_region__";
+
+type Tab = { key: string; label: string; count: number };
+
+// The visibility toggle lives in the parent (see NpcAdminTable) so switching
+// tabs — which unmounts every row of the previous tab — doesn't snap an already
+// toggled NPC back to the value the server rendered.
+function Row({
+  npc,
+  enabled,
+  onEnabledChange,
+}: {
+  npc: AdminNpc;
+  enabled: boolean;
+  onEnabledChange: (id: string, enabled: boolean) => void;
+}) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,11 +38,11 @@ function Row({ npc }: { npc: AdminNpc }) {
     const next = !enabled;
     setBusy(true);
     setError(null);
-    setEnabled(next); // optimistic
+    onEnabledChange(npc.id, next); // optimistic
     try {
       await setVisibility(npc.id, next);
     } catch (err) {
-      setEnabled(!next); // revert
+      onEnabledChange(npc.id, !next); // revert
       setError(errorMessage(err));
     } finally {
       setBusy(false);
@@ -70,6 +88,54 @@ function Row({ npc }: { npc: AdminNpc }) {
 }
 
 export function NpcAdminTable({ npcs }: { npcs: AdminNpc[] }) {
+  // Region comes from pos_x/pos_y, never from map_id — every seeded NPC has
+  // map_id 0, so it would collapse the whole list into a single tab.
+  const { buckets, tabs } = useMemo(() => {
+    const byRegion = new Map<string, AdminNpc[]>();
+    for (const npc of npcs) {
+      const key = regionFor(npc.pos_x, npc.pos_y) ?? NO_REGION_TAB;
+      const bucket = byRegion.get(key);
+      if (bucket) bucket.push(npc);
+      else byRegion.set(key, [npc]);
+    }
+
+    // Cities first (mapzones order), then the remaining regions by size so the
+    // busy ones are reachable without scanning the rail, then the leftovers.
+    const cities = CITY_REGION_NAMES.filter((name) => byRegion.has(name));
+    const rest = [...byRegion.keys()]
+      .filter((key) => key !== NO_REGION_TAB && !cities.includes(key as (typeof CITY_REGION_NAMES)[number]))
+      .sort((a, b) => (byRegion.get(b)!.length - byRegion.get(a)!.length) || a.localeCompare(b));
+
+    const ordered: Tab[] = [
+      { key: ALL_TAB, label: "Todos", count: npcs.length },
+      ...[...cities, ...rest].map((key) => ({
+        key,
+        label: regionLabel(key),
+        count: byRegion.get(key)!.length,
+      })),
+    ];
+    if (byRegion.has(NO_REGION_TAB)) {
+      ordered.push({
+        key: NO_REGION_TAB,
+        label: "Fora de região",
+        count: byRegion.get(NO_REGION_TAB)!.length,
+      });
+    }
+
+    return { buckets: byRegion, tabs: ordered };
+  }, [npcs]);
+
+  const [tab, setTab] = useState(ALL_TAB);
+  // A tab can vanish when the list changes (the last NPC of a region moved
+  // away); fall back to "Todos" instead of rendering an empty table.
+  const activeTab = tabs.some((t) => t.key === tab) ? tab : ALL_TAB;
+  const visible = activeTab === ALL_TAB ? npcs : buckets.get(activeTab) ?? [];
+
+  const [overrides, setOverrides] = useState<Record<string, boolean>>({});
+  function onEnabledChange(id: string, enabled: boolean) {
+    setOverrides((prev) => ({ ...prev, [id]: enabled }));
+  }
+
   if (npcs.length === 0) {
     return (
       <p style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
@@ -90,25 +156,63 @@ export function NpcAdminTable({ npcs }: { npcs: AdminNpc[] }) {
   };
 
   return (
-    <div style={{ overflowX: "auto", background: "var(--grad-panel)", border: "1px solid var(--iron-400)", borderRadius: "var(--radius-lg)", boxShadow: "var(--bevel-raise), var(--shadow-md)" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 720 }}>
-        <thead>
-          <tr>
-            <th style={th}>ID</th>
-            <th style={th}>Slug / Nome</th>
-            <th style={th}>Mapa · X,Y</th>
-            <th style={th}>Tipo</th>
-            <th style={th}>Visibilidade</th>
-            <th style={{ ...th, textAlign: "right" }}>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {npcs.map((npc) => (
-            <Row key={npc.id} npc={npc} />
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 14 }}>
+        {tabs.map((t) => {
+          const active = t.key === activeTab;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTab(t.key)}
+              style={{
+                minHeight: 34,
+                padding: "6px 10px",
+                borderRadius: "var(--radius-xs)",
+                border: active ? "1px solid var(--gold-600)" : "1px solid rgba(93,81,60,0.95)",
+                background: active
+                  ? "linear-gradient(180deg, rgba(202,165,92,0.32), rgba(90,58,23,0.46))"
+                  : "linear-gradient(180deg, rgba(37,30,20,0.9), rgba(14,10,6,0.92))",
+                color: active ? "var(--gold-300)" : "var(--parchment-300)",
+                boxShadow: active ? "inset 0 1px 0 rgba(255,230,170,0.22)" : "none",
+                fontFamily: "var(--font-ui)",
+                fontSize: 11,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+              }}
+            >
+              {t.label} ({t.count})
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{ overflowX: "auto", background: "var(--grad-panel)", border: "1px solid var(--iron-400)", borderRadius: "var(--radius-lg)", boxShadow: "var(--bevel-raise), var(--shadow-md)" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 720 }}>
+          <thead>
+            <tr>
+              <th style={th}>ID</th>
+              <th style={th}>Slug / Nome</th>
+              <th style={th}>Mapa · X,Y</th>
+              <th style={th}>Tipo</th>
+              <th style={th}>Visibilidade</th>
+              <th style={{ ...th, textAlign: "right" }}>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visible.map((npc) => (
+              <Row
+                key={npc.id}
+                npc={npc}
+                enabled={overrides[npc.id] ?? npc.enabled}
+                onEnabledChange={onEnabledChange}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 
