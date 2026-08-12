@@ -59,6 +59,32 @@ respostas **válidas** (`result = OK`) quando o `webserver` roda **sem**
 numérico) com aviso de validação — **não** é erro. `ListMapZones` nunca vem vazio
 (não depende de `-content`).
 
+## Abas por região na listagem
+
+A tabela de `/admin/npcs` é agrupada em abas por região. A região é derivada de
+**`pos_x`/`pos_y`**, e **não** de `map_id`: o importador (`dbserver import-npcs`)
+nunca escreve `MapID`, então todo NPC do seed nasce com `map_id = 0` e agrupar
+por ele jogaria a lista inteira numa aba só. `map_id` continua sendo um rótulo
+que o moderador define à mão, sem efeito no jogo e sem relação com as abas.
+
+A tabela de retângulos vive em `src/lib/npc/regions.ts` — é **cópia local** de
+duas fontes do `w2pp-OpenWYD`:
+
+- `Release/TMsrv/run/Regions.txt` → os 52 retângulos nomeados;
+- `tmserver/internal/world/city.go` → os 5 retângulos `CityLimit`, nomeados como
+  em `webserver/internal/mapzones/mapzones.go`.
+
+`regionFor(x, y)` devolve o nome do **menor** retângulo que contém a posição — os
+retângulos se sobrepõem muito, e as caixas de cidade são bem mais justas que as
+regiões que cobrem o mesmo terreno, então "menor ganha" resolve o centro da
+cidade para `Armia`/`Azran`/… em vez da região ao redor. No conteúdo atual isso
+rotula ~90% dos NPCs; o resto cai numa aba **"Fora de região"** (é esperado, não
+é bug). A derivação é **só de exibição** — nada é gravado de volta.
+
+> **Obrigação de sync:** se `Regions.txt` ou `world/city.go` mudarem no backend,
+> `src/lib/npc/regions.ts` precisa ser atualizado à mão. Não há geração
+> automática, mesma situação do `mapzones.go`.
+
 ## Semântica de domínio
 
 - **`merchant`** (tipo do NPC): `0` não-merchant, `1` loja normal, `2` guarda-carga,
