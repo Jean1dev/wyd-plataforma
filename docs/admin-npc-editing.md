@@ -35,7 +35,9 @@ Browser ──HTTPS──> Next.js (Route Handlers = BFF)  ──gRPC+mTLS──
 | `GET /api/admin/map-zones` | `ListMapZones` |
 
 `AdminResult` → HTTP: `OK`→200, `FORBIDDEN`→403, `INVALID`→422, `NOT_FOUND`→404,
-`UNSPECIFIED`→500. Rejeição de gRPC (falha de infra) → **502**.
+`CONTENT_OWNED`→**409**, `UNSPECIFIED`→500. Rejeição de gRPC (falha de infra) → **502**.
+O mapa vive em `src/lib/web-api/admin-http.ts` e é um `Record<AdminResult, number>` —
+um valor novo do enum quebra o build em vez de virar 500 silencioso.
 
 ## Pickers do formulário (lookups)
 
@@ -97,6 +99,19 @@ rotula ~90% dos NPCs; o resto cai numa aba **"Fora de região"** (é esperado, n
   `ListItemPrices` devolve os overrides ativos (`item_index, price`) para popular a
   tabela de preços no formulário — item ausente da lista = sem override, vale o
   preço do catálogo. Não depende de `-content` (não é um lookup de catálogo).
+- **`origin`** (`AdminNpc.origin`): `"content"` = importado do `NPCGener.txt` por
+  `dbserver import-npcs` (conteúdo versionado do jogo); `"custom"` = criado por um
+  moderador via `UpsertNpc`. `DeleteNpc` num NPC `"content"` é **sempre** recusado
+  com `ADMIN_RESULT_CONTENT_OWNED` (→409): apagar a linha do banco não removeria o
+  NPC do conteúdo — o próximo `import-npcs` o traria de volta e nesse meio-tempo o
+  banco e o `Release/` ficariam divergentes. A saída suportada é **desabilitar**
+  (`SetNpcVisibility(enabled=false)`).
+  Na base atual isso é a regra, não a exceção (~99% das definições são `"content"`),
+  então a UI **não oferece a ação impossível**: `DeleteNpcButton` esconde o botão e
+  mostra a nota apontando o toggle de visibilidade, e a listagem marca com um badge
+  `custom` só os NPCs criados por moderador. Se a recusa chegar por outro caminho
+  (link direto, script, corrida entre moderadores), `errorMessage()` traduz o 409
+  numa mensagem específica — nunca em "erro interno".
 - **Propagação**: a escrita vai para o Postgres na hora, mas o jogo só reflete
   quando o **tmServer recarrega** (boot + poll ~15s). Requer o overlay ligado
   (`W2PP_NPC_EDITING=true`). A UI avisa o moderador disso após cada operação.
