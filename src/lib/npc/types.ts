@@ -7,7 +7,9 @@ export type AdminResult =
   | "ADMIN_RESULT_OK"
   | "ADMIN_RESULT_FORBIDDEN"
   | "ADMIN_RESULT_INVALID"
-  | "ADMIN_RESULT_NOT_FOUND";
+  | "ADMIN_RESULT_NOT_FOUND"
+  // DeleteNpc refused because the NPC is content-owned (see AdminNpc.origin).
+  | "ADMIN_RESULT_CONTENT_OWNED";
 
 export type AdminNpcShopItem = {
   slot: number;
@@ -33,6 +35,11 @@ export type AdminNpc = {
   route_type: number;
   merchant: number;
   shop: AdminNpcShopItem[];
+  // "content" = imported from NPCGener.txt by `dbserver import-npcs` (versioned
+  // game content, cannot be deleted — only hidden); "custom" = created by a
+  // moderator through UpsertNpc.
+  origin: string;
+  generator_index: number;
 };
 
 // Lookup entries that back the form pickers. Empty lists are valid (web-api

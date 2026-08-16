@@ -64,7 +64,7 @@ export default async function EditNpcPage({ params }: { params: Promise<{ id: st
       </Section>
 
       <Section title="Zona de perigo">
-        <DeleteNpcButton npcId={npc.id} slug={npc.slug} />
+        <DeleteNpcButton npcId={npc.id} slug={npc.slug} origin={npc.origin} />
       </Section>
     </div>
   );

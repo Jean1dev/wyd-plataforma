@@ -9,6 +9,10 @@ const STATUS: Record<AdminResult, number> = {
   ADMIN_RESULT_FORBIDDEN: 403,
   ADMIN_RESULT_INVALID: 422,
   ADMIN_RESULT_NOT_FOUND: 404,
+  // Not an internal error: the NPC came from NPCGener.txt and can only be
+  // hidden. The client turns this into a message pointing at the visibility
+  // toggle — a missing entry here would render it as a generic 500.
+  ADMIN_RESULT_CONTENT_OWNED: 409,
   ADMIN_RESULT_UNSPECIFIED: 500,
 };
 

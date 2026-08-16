@@ -62,9 +62,14 @@ function Row({
     <tr>
       <td style={{ ...cell, fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}>{npc.id}</td>
       <td style={cell}>
-        <Link href={`/admin/npcs/${npc.id}`} style={{ color: "var(--gold-300)", fontWeight: 600 }}>
-          {npc.slug}
-        </Link>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <Link href={`/admin/npcs/${npc.id}`} style={{ color: "var(--gold-300)", fontWeight: 600 }}>
+            {npc.slug}
+          </Link>
+          {/* Only the rare moderator-created NPC is marked: content-owned is the
+              default for ~99% of the base, so badging it would be noise. */}
+          {npc.origin === "custom" ? <Badge variant="premium">custom</Badge> : null}
+        </span>
         <div style={{ color: "var(--text-muted)", fontSize: 12 }}>{npc.display_name}</div>
       </td>
       <td style={{ ...cell, fontFamily: "var(--font-mono)" }}>

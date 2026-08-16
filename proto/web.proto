@@ -129,6 +129,10 @@ enum AdminResult {
   ADMIN_RESULT_FORBIDDEN = 2;
   ADMIN_RESULT_INVALID = 3;
   ADMIN_RESULT_NOT_FOUND = 4;
+  // DeleteNpc on a content-owned NPC (origin = "content"). Not an error: the
+  // supported action is SetNpcVisibility(enabled=false). ~99% of the seeded
+  // base is content-owned, so this is an expected outcome, not a corner case.
+  ADMIN_RESULT_CONTENT_OWNED = 5;
 }
 
 message AdminNpc {
@@ -143,6 +147,8 @@ message AdminNpc {
   int32  route_type    = 9;  // 0 = idle
   int32  merchant      = 10; // 0 non-merchant, 1 shop, 2 storage, 19 shop3, 100 quest
   repeated AdminNpcShopItem shop = 11; // filled in GetNpc/ListNpcs
+  string origin          = 12; // "content" (from NPCGener.txt) | "custom" (moderator-created)
+  int32  generator_index = 13; // source line in NPCGener.txt; -1 when not applicable
 }
 
 message AdminNpcShopItem {

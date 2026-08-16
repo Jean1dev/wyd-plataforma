@@ -61,6 +61,9 @@ export function errorMessage(err: unknown): string {
   if (!e || typeof e !== "object") return "Erro inesperado.";
   if (e.status === 401) return "Sessão expirada. Faça login novamente.";
   if (e.status === 403 || e.result === "ADMIN_RESULT_FORBIDDEN") return "Você não tem permissão de moderador.";
+  if (e.status === 409 || e.result === "ADMIN_RESULT_CONTENT_OWNED") {
+    return "Este NPC faz parte do conteúdo do jogo e não pode ser excluído. Desabilite-o para removê-lo do mundo.";
+  }
   if (e.status === 404 || e.result === "ADMIN_RESULT_NOT_FOUND") return "NPC não encontrado.";
   if (e.status === 422 || e.result === "ADMIN_RESULT_INVALID") return "Dados inválidos. Revise os campos.";
   if (e.status === 502) return "web-api indisponível. Tente novamente em instantes.";
