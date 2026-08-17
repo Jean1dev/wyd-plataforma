@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { AuthTabs } from "@/components/AuthTabs";
-import { SERVER_NAME } from "@/lib/portal-data";
+import { Button } from "@/components/ui";
+import { DISCORD_INVITE_URL, SERVER_NAME } from "@/lib/portal-data";
 
 export default function LoginPage() {
   return (
@@ -65,6 +66,36 @@ export default function LoginPage() {
         >
           Acesse de qualquer dispositivo —{" "}
           <span style={{ color: "var(--gold-300)" }}>PC, celular ou tablet</span>.
+        </div>
+
+        <div
+          style={{
+            marginTop: 22,
+            paddingTop: 18,
+            borderTop: "1px solid var(--iron-400)",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "var(--font-body)",
+              fontSize: 13,
+              color: "var(--parchment-300)",
+              marginBottom: 10,
+              textShadow: "0 1px 6px #000",
+            }}
+          >
+            Dúvidas ou quer conhecer o servidor antes de criar a conta?
+          </div>
+          <Button
+            href={DISCORD_INVITE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="ghost"
+            block
+          >
+            Entrar no Discord
+          </Button>
         </div>
       </div>
     </div>

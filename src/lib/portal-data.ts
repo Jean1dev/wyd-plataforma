@@ -11,6 +11,7 @@ export const NAV_LINKS = [
   { href: "/download", label: "Download" },
   { href: "/loja", label: "Loja" },
   { href: "/recompensas", label: "Recompensas" },
+  { href: "/comunidade", label: "Comunidade" },
 ] as const;
 
 export type Character = {
@@ -104,3 +105,46 @@ export const STEPS = [
 
 export const REQ_MIN = ["Windows 7 64-bit", "Core i3 / equivalente", "4 GB de RAM", "DirectX 9.0c", "5 GB livres"];
 export const REQ_REC = ["Windows 10/11 64-bit", "Core i5 / Ryzen 5", "8 GB de RAM", "DirectX 11", "SSD · 10 GB livres"];
+
+export const DISCORD_INVITE_URL = "https://discord.gg/msCswzyqg";
+
+export const COMMUNITY_HIGHLIGHTS = [
+  {
+    icon: "✦",
+    title: "Avisos em primeira mão",
+    desc: "Manutenções, quedas e volta do servidor são anunciadas lá antes de qualquer outro lugar.",
+  },
+  {
+    icon: "⚔",
+    title: "Eventos e guerras",
+    desc: "Horário de guerra, eventos e mudanças de rate saem no canal de anúncios.",
+  },
+  {
+    icon: "❖",
+    title: "Suporte direto",
+    desc: "Problema de conta, item sumido ou dúvida de donate — fale com a equipe sem sair do Discord.",
+  },
+  {
+    icon: "✸",
+    title: "Papo com a comunidade",
+    desc: "Monte party, procure guild e troque build com quem já joga no servidor.",
+  },
+];
+
+export const COMMUNITY_SUPPORT = [
+  {
+    n: 1,
+    title: "Preciso de ajuda",
+    desc: "Use o canal de suporte e descreva o que aconteceu. Evite mandar DM para a equipe — no canal qualquer moderador online consegue te atender.",
+  },
+  {
+    n: 2,
+    title: "Quero reportar um bug",
+    desc: "Poste no canal de bugs com o nick do personagem, data e horário aproximados, e um print ou vídeo do que aconteceu.",
+  },
+  {
+    n: 3,
+    title: "Falar com a moderação",
+    desc: "Denúncias de jogador, recursos de punição e assuntos de conta vão no canal da moderação, que é privado entre você e a equipe.",
+  },
+];
