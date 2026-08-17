@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Badge } from "@/components/ui";
+import { Badge, ItemIcon } from "@/components/ui";
 import type { DailyRewardItem } from "@/lib/daily-reward/types";
+import type { ItemIconMap } from "@/lib/item-catalog/types";
 import { ClaimRewardButton } from "./ClaimRewardButton";
 
 type Props = {
   items: DailyRewardItem[];
+  icons: ItemIconMap;
   initialClaimedToday: boolean;
   initialClaimedItemId: string;
   initialClaimedItemTitle: string;
@@ -15,7 +17,13 @@ type Props = {
 // Claiming any offer blocks every other offer for the rest of the UTC day
 // (unlike the donate shop, where buying one item doesn't affect the others) —
 // so claim state lives here, at the grid level, rather than per-button.
-export function RewardGrid({ items, initialClaimedToday, initialClaimedItemId, initialClaimedItemTitle }: Props) {
+export function RewardGrid({
+  items,
+  icons,
+  initialClaimedToday,
+  initialClaimedItemId,
+  initialClaimedItemTitle,
+}: Props) {
   const [claimedToday, setClaimedToday] = useState(initialClaimedToday);
   const [claimedItemId, setClaimedItemId] = useState(initialClaimedItemId);
   // Falls back to the server-supplied title when the claimed offer isn't in
@@ -83,16 +91,22 @@ export function RewardGrid({ items, initialClaimedToday, initialClaimedItemId, i
                 <div
                   style={{
                     minHeight: 92,
+                    padding: 10,
                     borderRadius: "var(--radius-sm)",
                     background: "var(--surface-inset)",
                     boxShadow: "var(--bevel-in)",
                     display: "grid",
                     placeItems: "center",
+                    gap: 6,
                     color: "var(--gold-300)",
                   }}
                 >
-                  <div style={{ textAlign: "center" }}>
-                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 24 }}>#{it.item_index}</div>
+                  <ItemIcon item={icons[it.item_index]} itemIndex={it.item_index} size="lg" />
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {/* Kept visible: support and moderators troubleshoot by index. */}
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)" }}>
+                      #{it.item_index}
+                    </span>
                     {it.expires_days > 0 ? <Badge variant="gold">{it.expires_days} dias</Badge> : null}
                   </div>
                 </div>
@@ -108,6 +122,20 @@ export function RewardGrid({ items, initialClaimedToday, initialClaimedItemId, i
                   >
                     {it.title}
                   </div>
+                  {/* Catalog name, when the offer title renamed the item — makes a
+                      wrong item_index visible instead of silently plausible. */}
+                  {icons[it.item_index] && icons[it.item_index].displayName !== it.title ? (
+                    <div
+                      style={{
+                        fontFamily: "var(--font-body)",
+                        fontSize: 12,
+                        color: "var(--text-faint)",
+                        marginBottom: 5,
+                      }}
+                    >
+                      {icons[it.item_index].displayName}
+                    </div>
+                  ) : null}
                   <div
                     style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-muted)", lineHeight: 1.4 }}
                   >

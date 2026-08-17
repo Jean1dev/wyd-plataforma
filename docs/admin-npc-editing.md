@@ -51,7 +51,9 @@ escaneadas **uma vez no boot** do web-api, sem leitura de disco por request):
 - **`ListItemCatalog`** → combobox pesquisável de `item_index` (loja e preço). O
   catálogo é grande (~3200 itens): é carregado **uma vez** no client e
   compartilhado entre todos os slots (`_components/catalog.ts`), filtrando
-  localmente.
+  localmente. As opções são rotuladas pelo `display_name` (nome sem `_`) e
+  mostram o ícone do item; o mesmo `catalog.byIndex` alimenta os tiles da grade
+  de slots — ver [`docs/item-icons.md`](item-icons.md).
 - **`ListMapZones`** → `<select>` das 5 cidades para `map_id` (tabela fixa; hoje
   `map_id` é só rótulo, o mundo roda num grid único).
 

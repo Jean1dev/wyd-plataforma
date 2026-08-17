@@ -3,8 +3,10 @@
 import type { CSSProperties } from "react";
 import { useMemo, useState } from "react";
 import { X } from "lucide-react";
-import { Button } from "@/components/ui";
+import { Button, ItemIcon } from "@/components/ui";
 import { EQUIP_SLOT_COUNT } from "@/lib/mob-template/domain";
+import { toItemIconData } from "@/lib/item-catalog/view";
+import { slotsLabel } from "@/lib/item-catalog/slots";
 import type { AdminMobTemplateEquipItem } from "@/lib/mob-template/types";
 import { Combobox, type ComboOption } from "../../npcs/_components/Combobox";
 import { PickerNote } from "../../npcs/_components/PickerNote";
@@ -92,11 +94,13 @@ export function EquipEditor({
 
   const catalog = useItemCatalog();
   const itemOptions: ComboOption[] = useMemo(
-    () => catalog.items.map((it) => ({ value: String(it.item_index), label: it.name, hint: `#${it.item_index}` })),
-    [catalog.items],
-  );
-  const itemNameByIndex = useMemo(
-    () => new Map(catalog.items.map((it) => [it.item_index, it.name])),
+    () =>
+      catalog.items.map((it) => ({
+        value: String(it.item_index),
+        label: it.display_name || it.name,
+        hint: `#${it.item_index}`,
+        leading: <ItemIcon item={toItemIconData(it)} itemIndex={it.item_index} size="sm" />,
+      })),
     [catalog.items],
   );
 
@@ -109,7 +113,14 @@ export function EquipEditor({
   function itemLabel(itemValue: string) {
     const itemIndex = Number(itemValue);
     if (!Number.isInteger(itemIndex) || itemIndex <= 0) return "";
-    return itemNameByIndex.get(itemIndex) ?? `Item #${itemIndex}`;
+    const entry = catalog.byIndex.get(itemIndex);
+    return entry ? entry.display_name || entry.name : `Item #${itemIndex}`;
+  }
+
+  /** Icon data for a slot's raw value, or undefined when the catalog can't resolve it. */
+  function itemIcon(itemValue: string) {
+    const entry = catalog.byIndex.get(Number(itemValue));
+    return entry ? toItemIconData(entry) : undefined;
   }
 
   async function save() {
@@ -152,6 +163,17 @@ export function EquipEditor({
   const selected = slots[selectedSlot] ?? EMPTY_SLOT;
   const selectedFilled = isFilled(selected);
   const selectedName = itemLabel(selected.itemIndex);
+
+  // Beware the name collision: `selectedSlot` is the Equip[] index being edited
+  // (0..15), while the catalog's slot_mask says where the item *can* go. Bit i
+  // of the mask is Equip[i], so they compare directly. slot_mask 0 (potions,
+  // coupons) means "not equippable" and is left alone — the backend does not
+  // check any of this, so this is a warning, never a block.
+  const selectedEntry = catalog.byIndex.get(Number(selected.itemIndex));
+  const slotMismatch =
+    selectedFilled && selectedEntry && selectedEntry.slot_mask > 0 && !(selectedEntry.slot_mask & (1 << selectedSlot))
+      ? slotsLabel(selectedEntry.slots)
+      : null;
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -225,6 +247,7 @@ export function EquipEditor({
                   </span>
                   {filled ? (
                     <>
+                      <ItemIcon item={itemIcon(s?.itemIndex ?? "")} itemIndex={Number(s?.itemIndex)} size="md" />
                       <span
                         style={{
                           width: "100%",
@@ -285,9 +308,33 @@ export function EquipEditor({
           <h3 style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "var(--parchment-100)", margin: "0 0 4px" }}>
             Slot {selectedSlot}
           </h3>
-          <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-muted)", margin: "0 0 14px" }}>
-            {selectedFilled ? selectedName : "Nenhum item neste slot."}
-          </p>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontFamily: "var(--font-body)",
+              fontSize: 13,
+              color: "var(--text-muted)",
+              margin: "0 0 14px",
+            }}
+          >
+            {selectedFilled ? (
+              <>
+                <ItemIcon item={itemIcon(selected.itemIndex)} itemIndex={Number(selected.itemIndex)} size="sm" />
+                <span>{selectedName}</span>
+              </>
+            ) : (
+              <span>Nenhum item neste slot.</span>
+            )}
+          </div>
+
+          {slotMismatch ? (
+            <div style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--gold-400)", margin: "-8px 0 14px" }}>
+              Aviso: o catálogo diz que este item vai em <strong>{slotMismatch}</strong>, não no slot{" "}
+              {selectedSlot}. O servidor não checa isso — salva assim mesmo.
+            </div>
+          ) : null}
 
           <div style={{ display: "grid", gap: 14 }}>
             <Combobox

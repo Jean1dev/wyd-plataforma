@@ -2,7 +2,13 @@
 
 import { useMemo, useRef, useState } from "react";
 
-export type ComboOption = { value: string; label: string; hint?: string };
+export type ComboOption = {
+  value: string;
+  label: string;
+  hint?: string;
+  /** Optional node rendered before the label in the dropdown row (e.g. an ItemIcon). */
+  leading?: React.ReactNode;
+};
 
 type Props = {
   label?: string;
@@ -140,9 +146,14 @@ export function Combobox({
               cursor: "pointer",
             }}
           >
-            <span>{opt.label}</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+              {opt.leading}
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{opt.label}</span>
+            </span>
             {opt.hint ? (
-              <span style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)", fontSize: 12 }}>
+              <span
+                style={{ flex: "none", color: "var(--text-muted)", fontFamily: "var(--font-mono)", fontSize: 12 }}
+              >
                 {opt.hint}
               </span>
             ) : null}

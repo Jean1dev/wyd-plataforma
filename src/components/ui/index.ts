@@ -5,6 +5,7 @@ export { StatBar } from "./StatBar";
 export { Stat } from "./Stat";
 export { Avatar } from "./Avatar";
 export { ClassCrest, CLASS_META, type WydClass } from "./ClassCrest";
+export { ItemIcon } from "./ItemIcon";
 export { RankRow } from "./RankRow";
 export { Input } from "./Input";
 export { Checkbox } from "./Checkbox";
