@@ -2,8 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import { AlertTriangle, CheckCircle2, Power, RefreshCw, Save, ShieldAlert, Zap } from "lucide-react";
-import { Button, Checkbox, Input } from "@/components/ui";
+import { Button, Checkbox, Input, ItemIcon } from "@/components/ui";
+import { toItemIconData } from "@/lib/item-catalog/view";
 import type { WorldEventConfigJson, WorldEventStatus } from "@/lib/world-events/types";
+import { Combobox, type ComboOption } from "../../npcs/_components/Combobox";
+import { PickerNote } from "../../npcs/_components/PickerNote";
+import { useItemCatalog } from "../../npcs/_components/catalog";
 import {
   emptyWorldEventConfig,
   validateWorldEventConfig,
@@ -207,6 +211,18 @@ export function WorldEventConfigTool() {
   const [form, setForm] = useState<WorldEventConfigJson>(emptyWorldEventConfig);
   const [saved, setSaved] = useState<WorldEventConfigJson>(emptyWorldEventConfig);
 
+  const catalog = useItemCatalog();
+  const itemOptions: ComboOption[] = useMemo(
+    () =>
+      catalog.items.map((it) => ({
+        value: String(it.item_index),
+        label: it.display_name || it.name,
+        hint: `#${it.item_index}`,
+        leading: <ItemIcon item={toItemIconData(it)} itemIndex={it.item_index} size="sm" />,
+      })),
+    [catalog.items],
+  );
+
   const dirty = useMemo(() => !sameConfig(form, saved), [form, saved]);
   const validation = useMemo(() => validateWorldEventConfig(form), [form]);
   const currentStatus = useMemo(() => worldEventStatus(form), [form]);
@@ -335,15 +351,28 @@ export function WorldEventConfigTool() {
               checked={form.enabled}
               onChange={(e) => set("enabled", e.target.checked)}
             />
-            <Input
-              label="Item index"
-              type="number"
-              min={0}
-              max={32767}
-              step={1}
-              value={form.itemIndex}
-              onChange={(e) => set("itemIndex", toInt(e.target.value))}
-            />
+            <div style={{ display: "grid", gap: 6 }}>
+              <Combobox
+                label="Item do drop"
+                value={form.itemIndex > 0 ? String(form.itemIndex) : ""}
+                onChange={(v) => set("itemIndex", toInt(v))}
+                options={itemOptions}
+                available={catalog.available}
+                loading={catalog.loading}
+                placeholder="Buscar item…"
+                manualPlaceholder="item_index"
+                manualInputMode="numeric"
+                manualHint="Digite o item_index manualmente (índice do ItemList.csv, 0 = sem drop)."
+              />
+              {!catalog.loading ? (
+                <PickerNote
+                  status={catalog.status}
+                  rpc="ListItemCatalog"
+                  contentDependent
+                  manualHint="Digite o item_index manualmente (índice do ItemList.csv)."
+                />
+              ) : null}
+            </div>
             <div style={{ display: "grid", gap: 6 }}>
               <Input
                 label="Divisor de chance"

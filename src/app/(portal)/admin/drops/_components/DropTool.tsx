@@ -11,7 +11,10 @@ import {
   type FormEvent,
 } from "react";
 import { ChevronDown, ChevronRight, Package, RefreshCw, Search, Users } from "lucide-react";
-import { Button, Checkbox, Input } from "@/components/ui";
+import { Button, Checkbox, Input, ItemIcon } from "@/components/ui";
+import type { ItemCatalogEntry } from "@/lib/npc/types";
+import { toItemIconData } from "@/lib/item-catalog/view";
+import { useItemCatalog } from "../../npcs/_components/catalog";
 
 type DropItemMob = {
   templateName: string;
@@ -227,6 +230,14 @@ function RateDivisor({ value }: { value: number }) {
   );
 }
 
+// The drop RPCs carry item_index/item_name but no visual fields, so the icon
+// comes from a join against the item catalog. An unresolved index simply gets
+// the generic fallback.
+function iconFor(byIndex: Map<number, ItemCatalogEntry>, itemIndex: number) {
+  const entry = byIndex.get(itemIndex);
+  return entry ? toItemIconData(entry) : undefined;
+}
+
 function ItemResults({
   items,
   expanded,
@@ -236,6 +247,8 @@ function ItemResults({
   expanded: Set<number>;
   onToggle: (itemIndex: number) => void;
 }) {
+  const catalog = useItemCatalog();
+
   return (
     <div style={{ overflowX: "auto" }}>
       <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 820 }}>
@@ -267,7 +280,12 @@ function ItemResults({
                   <td style={{ ...cell, fontFamily: "var(--font-mono)", color: "var(--gold-300)" }}>
                     {item.itemIndex}
                   </td>
-                  <td style={cell}>{item.itemName || "-"}</td>
+                  <td style={cell}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <ItemIcon item={iconFor(catalog.byIndex, item.itemIndex)} itemIndex={item.itemIndex} size="sm" />
+                      <span>{item.itemName || "-"}</span>
+                    </div>
+                  </td>
                   <td style={{ ...cell, textAlign: "right", fontFamily: "var(--font-mono)" }}>{item.mobs.length}</td>
                 </tr>
                 {isExpanded ? (
@@ -325,6 +343,8 @@ function MobResults({
   expanded: Set<string>;
   onToggle: (key: string) => void;
 }) {
+  const catalog = useItemCatalog();
+
   return (
     <div style={{ overflowX: "auto" }}>
       <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 820 }}>
@@ -385,7 +405,16 @@ function MobResults({
                                 <td style={{ ...cell, fontFamily: "var(--font-mono)", color: "var(--gold-300)" }}>
                                   {item.itemIndex}
                                 </td>
-                                <td style={cell}>{item.itemName || "-"}</td>
+                                <td style={cell}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                    <ItemIcon
+                                      item={iconFor(catalog.byIndex, item.itemIndex)}
+                                      itemIndex={item.itemIndex}
+                                      size="sm"
+                                    />
+                                    <span>{item.itemName || "-"}</span>
+                                  </div>
+                                </td>
                                 <td style={cell}>
                                   <RateDivisor value={item.rateDivisor} />
                                 </td>

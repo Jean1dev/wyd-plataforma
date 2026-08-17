@@ -2,13 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Badge, Button } from "@/components/ui";
+import { Badge, Button, ItemIcon } from "@/components/ui";
 import { formatDonate } from "@/lib/donate/format";
 import type { DonateShopItem } from "@/lib/donate/types";
+import type { ItemIconData } from "@/lib/item-catalog/types";
+import { toItemIconData } from "@/lib/item-catalog/view";
+import { useItemCatalog } from "../../npcs/_components/catalog";
 import { deleteDonateItem, errorMessage, setDonateItemEnabled } from "./api";
 import { DonateItemForm } from "./DonateItemForm";
 
-function Row({ item }: { item: DonateShopItem }) {
+function Row({ item, icon }: { item: DonateShopItem; icon?: ItemIconData }) {
   const router = useRouter();
   const [enabled, setEnabled] = useState(item.enabled);
   const [editing, setEditing] = useState(false);
@@ -71,7 +74,15 @@ function Row({ item }: { item: DonateShopItem }) {
         <div style={{ color: "var(--gold-300)", fontWeight: 700 }}>{item.title}</div>
         <div style={{ color: "var(--text-muted)", fontSize: 12 }}>{item.description || "Sem descrição"}</div>
       </td>
-      <td style={{ ...cell, fontFamily: "var(--font-mono)" }}>#{item.item_index}</td>
+      <td style={cell}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <ItemIcon item={icon} itemIndex={item.item_index} size="sm" />
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontFamily: "var(--font-mono)" }}>#{item.item_index}</div>
+            {icon ? <div style={{ color: "var(--text-muted)", fontSize: 12 }}>{icon.displayName}</div> : null}
+          </div>
+        </div>
+      </td>
       <td style={{ ...cell, fontFamily: "var(--font-mono)", color: "var(--gold-300)" }}>
         {formatDonate(item.price)}
       </td>
@@ -104,6 +115,10 @@ function Row({ item }: { item: DonateShopItem }) {
 }
 
 export function DonateItemsTable({ items }: { items: DonateShopItem[] }) {
+  // Loaded once here, not per row: the fetch is shared process-wide by
+  // catalog.ts, but the hook would still add an effect per row.
+  const catalog = useItemCatalog();
+
   if (items.length === 0) {
     return (
       <p style={{ color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
@@ -146,9 +161,10 @@ export function DonateItemsTable({ items }: { items: DonateShopItem[] }) {
           </tr>
         </thead>
         <tbody>
-          {items.map((item) => (
-            <Row key={item.id} item={item} />
-          ))}
+          {items.map((item) => {
+            const entry = catalog.byIndex.get(item.item_index);
+            return <Row key={item.id} item={item} icon={entry ? toItemIconData(entry) : undefined} />;
+          })}
         </tbody>
       </table>
     </div>

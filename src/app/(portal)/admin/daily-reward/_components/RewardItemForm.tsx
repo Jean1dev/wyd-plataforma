@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Checkbox, Input } from "@/components/ui";
+import { Button, Checkbox, Input, ItemIcon } from "@/components/ui";
 import type { DailyRewardItem, DailyRewardItemPayload } from "@/lib/daily-reward/types";
 import { parseDonateInt as num } from "@/lib/donate/format";
+import { toItemIconData } from "@/lib/item-catalog/view";
 import { Combobox, type ComboOption } from "../../npcs/_components/Combobox";
 import { PickerNote } from "../../npcs/_components/PickerNote";
 import { useItemCatalog } from "../../npcs/_components/catalog";
@@ -55,7 +56,13 @@ export function RewardItemForm({
   const editing = Boolean(item);
   const catalog = useItemCatalog();
   const options: ComboOption[] = useMemo(
-    () => catalog.items.map((it) => ({ value: String(it.item_index), label: it.name, hint: String(it.item_index) })),
+    () =>
+      catalog.items.map((it) => ({
+        value: String(it.item_index),
+        label: it.display_name || it.name,
+        hint: String(it.item_index),
+        leading: <ItemIcon item={toItemIconData(it)} itemIndex={it.item_index} size="sm" />,
+      })),
     [catalog.items],
   );
 

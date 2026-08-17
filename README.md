@@ -29,6 +29,15 @@ browser fala REST com as rotas em `src/app/api/admin/*`, que derivam o
 ambiente e pré-requisitos operacionais estão em
 [`docs/admin-npc-editing.md`](docs/admin-npc-editing.md).
 
+## Ícones de item
+
+Toda tela que mostra um item usa `ItemIcon`, que integra contra a chave visual
+(`icon_key`) publicada pelo `web-api` — o servidor não tem as imagens dos itens.
+Hoje o portal renderiza sempre o **fallback**; quando existir um pacote de
+imagens, defina `NEXT_PUBLIC_ITEM_ICON_BASE` (ex. `/item-icons`) e as imagens
+passam a ser usadas por cima do fallback, sem mudança de código. Detalhes em
+[`docs/item-icons.md`](docs/item-icons.md).
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

@@ -1,5 +1,6 @@
 import { getSession } from "@/lib/auth/session";
 import { dailyRewardRpc } from "@/lib/web-api/daily-reward-client";
+import { pickItemIcons } from "@/lib/item-catalog/catalog";
 import type { RewardLoadState } from "@/lib/daily-reward/types";
 import { RewardGrid } from "./_components/RewardGrid";
 
@@ -28,6 +29,9 @@ async function loadRewards(): Promise<RewardLoadState> {
 
 export default async function RecompensasPage() {
   const rewards = await loadRewards();
+  // DailyRewardItem carries no visual fields — join by item_index against the
+  // catalog, projected down to the offers on screen.
+  const icons = await pickItemIcons(rewards.status === "ok" ? rewards.items.map((it) => it.item_index) : []);
 
   return (
     <div className="wyd-screen" style={{ maxWidth: 1140, margin: "0 auto", padding: "32px 24px 72px" }}>
@@ -76,6 +80,7 @@ export default async function RecompensasPage() {
       ) : (
         <RewardGrid
           items={rewards.items}
+          icons={icons}
           initialClaimedToday={rewards.claimedToday}
           initialClaimedItemId={rewards.claimedItemId}
           initialClaimedItemTitle={rewards.claimedItemTitle}

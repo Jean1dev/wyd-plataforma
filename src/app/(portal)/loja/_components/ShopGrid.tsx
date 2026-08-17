@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Badge, Button } from "@/components/ui";
+import { Badge, Button, ItemIcon } from "@/components/ui";
 import { formatDonate } from "@/lib/donate/format";
+import type { ItemIconMap } from "@/lib/item-catalog/types";
 import type { DonateShopItem } from "@/lib/donate/types";
 import { BuyOfferButton } from "./BuyOfferButton";
 import { TopupModal } from "./TopupModal";
 
-export function ShopGrid({ items, initialBalance }: { items: DonateShopItem[]; initialBalance: string }) {
+type Props = { items: DonateShopItem[]; icons: ItemIconMap; initialBalance: string };
+
+export function ShopGrid({ items, icons, initialBalance }: Props) {
   const [balance, setBalance] = useState(initialBalance);
   const [topupOpen, setTopupOpen] = useState(false);
 
@@ -71,16 +74,22 @@ export function ShopGrid({ items, initialBalance }: { items: DonateShopItem[]; i
               <div
                 style={{
                   minHeight: 92,
+                  padding: 10,
                   borderRadius: "var(--radius-sm)",
                   background: "var(--surface-inset)",
                   boxShadow: "var(--bevel-in)",
                   display: "grid",
                   placeItems: "center",
+                  gap: 6,
                   color: "var(--gold-300)",
                 }}
               >
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 24 }}>#{it.item_index}</div>
+                <ItemIcon item={icons[it.item_index]} itemIndex={it.item_index} size="lg" />
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {/* Kept visible: support and moderators troubleshoot by index. */}
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)" }}>
+                    #{it.item_index}
+                  </span>
                   {it.expires_days > 0 ? <Badge variant="gold">{it.expires_days} dias</Badge> : null}
                 </div>
               </div>
@@ -96,6 +105,15 @@ export function ShopGrid({ items, initialBalance }: { items: DonateShopItem[]; i
                 >
                   {it.title}
                 </div>
+                {/* Catalog name, when the offer title renamed the item — makes a
+                    wrong item_index visible instead of silently plausible. */}
+                {icons[it.item_index] && icons[it.item_index].displayName !== it.title ? (
+                  <div
+                    style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-faint)", marginBottom: 5 }}
+                  >
+                    {icons[it.item_index].displayName}
+                  </div>
+                ) : null}
                 <div style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text-muted)", lineHeight: 1.4 }}>
                   {it.description || "Item permanente para entrega no armazém."}
                 </div>

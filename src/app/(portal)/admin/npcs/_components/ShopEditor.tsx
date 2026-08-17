@@ -3,8 +3,9 @@
 import type { CSSProperties } from "react";
 import { useMemo, useState } from "react";
 import { X } from "lucide-react";
-import { Button } from "@/components/ui";
+import { Button, ItemIcon } from "@/components/ui";
 import { merchantHasShop, SHOP_TABS } from "@/lib/npc/domain";
+import { toItemIconData } from "@/lib/item-catalog/view";
 import type { AdminNpc, AdminNpcShopItem } from "@/lib/npc/types";
 import { Combobox, type ComboOption } from "./Combobox";
 import { PickerNote } from "./PickerNote";
@@ -107,11 +108,13 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
 
   const catalog = useItemCatalog();
   const itemOptions: ComboOption[] = useMemo(
-    () => catalog.items.map((it) => ({ value: String(it.item_index), label: it.name, hint: `#${it.item_index}` })),
-    [catalog.items],
-  );
-  const itemNameByIndex = useMemo(
-    () => new Map(catalog.items.map((it) => [it.item_index, it.name])),
+    () =>
+      catalog.items.map((it) => ({
+        value: String(it.item_index),
+        label: it.display_name || it.name,
+        hint: `#${it.item_index}`,
+        leading: <ItemIcon item={toItemIconData(it)} itemIndex={it.item_index} size="sm" />,
+      })),
     [catalog.items],
   );
 
@@ -153,7 +156,14 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
   function itemLabel(itemValue: string) {
     const itemIndex = Number(itemValue);
     if (!Number.isInteger(itemIndex) || itemIndex <= 0) return "";
-    return itemNameByIndex.get(itemIndex) ?? `Item #${itemIndex}`;
+    const entry = catalog.byIndex.get(itemIndex);
+    return entry ? entry.display_name || entry.name : `Item #${itemIndex}`;
+  }
+
+  /** Icon data for a slot's raw value, or undefined when the catalog can't resolve it. */
+  function itemIcon(itemValue: string) {
+    const entry = catalog.byIndex.get(Number(itemValue));
+    return entry ? toItemIconData(entry) : undefined;
   }
 
   async function save() {
@@ -315,6 +325,7 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
 
                     {filled ? (
                       <>
+                        <ItemIcon item={itemIcon(itemValue)} itemIndex={Number(itemValue)} size="md" />
                         <span
                           style={{
                             width: "100%",
@@ -461,15 +472,24 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
                   : "linear-gradient(145deg, #1c0d07 0%, #351708 52%, #100806 100%)",
                 boxShadow: "inset 0 0 10px rgba(0,0,0,0.72)",
                 display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
+                gap: 3,
                 overflow: "hidden",
                 color: selectedFilled ? "var(--gold-300)" : "rgba(200,176,131,0.5)",
                 fontFamily: "var(--font-mono)",
-                fontSize: 13,
+                fontSize: 11,
               }}
             >
-              {selectedFilled ? `#${selected.itemIndex}` : selectedSlot}
+              {selectedFilled ? (
+                <>
+                  <ItemIcon item={itemIcon(selected.itemIndex)} itemIndex={Number(selected.itemIndex)} size="md" />
+                  <span>#{selected.itemIndex}</span>
+                </>
+              ) : (
+                <span style={{ fontSize: 13 }}>{selectedSlot}</span>
+              )}
             </div>
             <div style={{ minWidth: 0 }}>
               <div
