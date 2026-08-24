@@ -16,6 +16,9 @@ Browser ──HTTPS──> Next.js (Route Handlers = BFF)  ──gRPC+mTLS──
 - `moderator_id` é **sempre** derivado do cookie de sessão (`session.accountId`),
   nunca do corpo enviado pelo browser.
 - Um `player` recebe `ADMIN_RESULT_FORBIDDEN` do `web-api` → 403 no BFF.
+- O `role` do cookie só controla menu/páginas. Os Route Handlers exigem uma
+  sessão autenticada, mas encaminham a RPC para que o `web-api` faça a decisão
+  autoritativa mesmo quando o papel guardado na sessão estiver desatualizado.
 
 ## Rotas REST → RPC
 
@@ -95,12 +98,16 @@ rotula ~90% dos NPCs; o resto cai numa aba **"Fora de região"** (é esperado, n
   `19` loja tipo 3, `100` NPC de quest. Outros valores → `INVALID`.
 - **Loja**: 27 slots (`0..26`) em **3 abas de 9** (`0..8` / `9..17` / `18..26`).
   `SetNpcShop` **substitui a loja inteira** — slots omitidos ficam vazios.
-  `slot` único em `[0,26]`; `item_index > 0`.
+  `slot` único em `[0,26]`; `item_index > 0`. Os efeitos existentes são
+  preservados ao editar; o efeito 61 (`EF_AMOUNT`) nunca é enviado, pois packs
+  são materializados pelo servidor a partir de `quantity` (vazio/0 vira 1).
 - **Preço**: `SetItemPrice(item_index, price)` é **global por item** (vale em todos
   os NPCs). `price >= 0` define o override; `price < 0` limpa e volta ao catálogo.
   `ListItemPrices` devolve os overrides ativos (`item_index, price`) para popular a
   tabela de preços no formulário — item ausente da lista = sem override, vale o
-  preço do catálogo. Não depende de `-content` (não é um lookup de catálogo).
+  preço do catálogo. Como `price` é `int64`, o BFF e o browser o transportam
+  como string decimal para não perder precisão; números JSON só são aceitos
+  quando são inteiros seguros. Não depende de `-content` (não é um lookup de catálogo).
 - **`origin`** (`AdminNpc.origin`): `"content"` = importado do `NPCGener.txt` por
   `dbserver import-npcs` (conteúdo versionado do jogo); `"custom"` = criado por um
   moderador via `UpsertNpc`. `DeleteNpc` num NPC `"content"` é **sempre** recusado

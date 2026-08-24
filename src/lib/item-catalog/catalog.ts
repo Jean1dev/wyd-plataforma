@@ -1,7 +1,7 @@
 import "server-only";
 
 import { itemCatalogRpc } from "@/lib/web-api/item-catalog-client";
-import type { ItemIconData, ItemIconMap } from "./types";
+import type { ItemIconData, ItemIconMap, ItemIconSelection } from "./types";
 import { toItemIconData } from "./view";
 
 // Server-side item catalog, fetched once per process and indexed by item_index.
@@ -15,12 +15,20 @@ import { toItemIconData } from "./view";
 // The whole list is ~3.2k entries. Never pass it to a client component: project
 // it with pickItemIcons() down to the indexes the screen actually renders.
 
-export type ItemCatalog = { version: string; byIndex: Map<number, ItemIconData> };
+export type ItemCatalog = {
+  catalogVersion: string;
+  iconPackVersion: string;
+  byIndex: Map<number, ItemIconData>;
+};
 
-const EMPTY: ItemCatalog = { version: "", byIndex: new Map() };
+const EMPTY: ItemCatalog = { catalogVersion: "", iconPackVersion: "", byIndex: new Map() };
 
 let cached: ItemCatalog | undefined;
 let inFlight: Promise<ItemCatalog> | undefined;
+let metadataCache:
+  | { version: string; byIndex: Map<number, Omit<ItemIconData, "iconUrl">> }
+  | undefined;
+let iconUrlCache: { version: string; byIndex: Map<number, string> } | undefined;
 
 async function loadCatalog(): Promise<ItemCatalog> {
   let resp;
@@ -32,18 +40,48 @@ async function loadCatalog(): Promise<ItemCatalog> {
     return EMPTY;
   }
 
-  const byIndex = new Map<number, ItemIconData>();
-  for (const it of resp.items ?? []) {
-    byIndex.set(it.item_index, toItemIconData(it));
+  const catalogVersion = resp.catalog_version ?? "";
+  const iconPackVersion = resp.icon_pack_version ?? "";
+
+  if (!metadataCache || metadataCache.version !== catalogVersion) {
+    const byIndex = new Map<number, Omit<ItemIconData, "iconUrl">>();
+    for (const entry of resp.items ?? []) {
+      const item = toItemIconData(entry);
+      byIndex.set(entry.item_index, {
+        itemIndex: item.itemIndex,
+        displayName: item.displayName,
+        iconKey: item.iconKey,
+        slots: item.slots,
+        grade: item.grade,
+      });
+    }
+    metadataCache = { version: catalogVersion, byIndex };
   }
-  const catalog: ItemCatalog = { version: resp.catalog_version ?? "", byIndex };
+
+  if (!iconUrlCache || iconUrlCache.version !== iconPackVersion) {
+    iconUrlCache = {
+      version: iconPackVersion,
+      byIndex: new Map((resp.items ?? []).map((entry) => [entry.item_index, entry.icon_url ?? ""])),
+    };
+  }
+
+  const byIndex = new Map<number, ItemIconData>();
+  for (const [itemIndex, metadata] of metadataCache.byIndex) {
+    byIndex.set(itemIndex, { ...metadata, iconUrl: iconUrlCache.byIndex.get(itemIndex) ?? "" });
+  }
+  const catalog: ItemCatalog = { catalogVersion, iconPackVersion, byIndex };
 
   // An empty catalog (version "") means web-api started without
   // -content/W2PP_CONTENT. That is NOT an error — the screens fall back — but it
   // must NOT be cached: if web-api is redeployed with content, a process that
   // cached the empty map would keep serving it, icons silently stuck on the
   // fallback, until restart. `version === ""` is the cheap check.
-  if (catalog.version !== "") cached = catalog;
+  if (catalog.catalogVersion !== "") {
+    cached = catalog;
+  } else {
+    metadataCache = undefined;
+    iconUrlCache = undefined;
+  }
   return catalog;
 }
 
@@ -63,12 +101,12 @@ export function getItemCatalog(): Promise<ItemCatalog> {
 }
 
 /** item_index → icon data for just these indexes. Unknown indexes are omitted. */
-export async function pickItemIcons(indexes: number[]): Promise<ItemIconMap> {
-  const { byIndex } = await getItemCatalog();
+export async function pickItemIcons(indexes: number[]): Promise<ItemIconSelection> {
+  const { byIndex, iconPackVersion } = await getItemCatalog();
   const out: ItemIconMap = {};
   for (const index of indexes) {
     const item = byIndex.get(index);
     if (item) out[index] = item;
   }
-  return out;
+  return { icons: out, iconPackVersion };
 }

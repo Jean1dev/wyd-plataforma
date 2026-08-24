@@ -8,6 +8,20 @@ import { useItemCatalog } from "./catalog";
 import { usePriceOverrides } from "./prices";
 import { errorMessage, PROPAGATION_NOTICE, setItemPrice } from "./api";
 
+const INT64_MAX = BigInt("9223372036854775807");
+
+function nonNegativeInt64(value: string): string | null {
+  const trimmed = value.trim();
+  if (!/^\d+$/.test(trimmed)) return null;
+  try {
+    const parsed = BigInt(trimmed);
+    if (parsed > INT64_MAX) return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
 // Global per-item price. There is no per-NPC price. Sending a negative price
 // clears the override so the item falls back to the game catalog price.
 export function PriceEditor() {
@@ -19,11 +33,17 @@ export function PriceEditor() {
   const catalog = useItemCatalog();
   const overrides = usePriceOverrides();
   const itemOptions: ComboOption[] = useMemo(
-    () => catalog.items.map((it) => ({ value: String(it.item_index), label: it.name, hint: `#${it.item_index}` })),
+    () =>
+      catalog.items.map((it) => ({
+        value: String(it.item_index),
+        label: it.display_name || it.name,
+        hint: `#${it.item_index}`,
+        keywords: it.name,
+      })),
     [catalog.items],
   );
   const itemNames = useMemo(
-    () => new Map(catalog.items.map((it) => [it.item_index, it.name])),
+    () => new Map(catalog.items.map((it) => [it.item_index, it.display_name || it.name])),
     [catalog.items],
   );
 
@@ -33,9 +53,9 @@ export function PriceEditor() {
       setMsg({ kind: "error", text: "item_index deve ser inteiro > 0." });
       return;
     }
-    const value = clear ? -1 : Number(price);
-    if (!clear && (!Number.isInteger(value) || value < 0)) {
-      setMsg({ kind: "error", text: "Preço deve ser inteiro >= 0." });
+    const value = clear ? "-1" : nonNegativeInt64(price);
+    if (value == null) {
+      setMsg({ kind: "error", text: "Preço deve ser inteiro entre 0 e 9223372036854775807." });
       return;
     }
 
@@ -59,7 +79,7 @@ export function PriceEditor() {
     setBusy(true);
     setMsg(null);
     try {
-      await setItemPrice(idx, -1);
+      await setItemPrice(idx, "-1");
       setMsg({ kind: "ok", text: "Override removido. " + PROPAGATION_NOTICE });
       overrides.refresh();
     } catch (err) {
@@ -108,7 +128,9 @@ export function PriceEditor() {
         <Input
           label="Preço (global)"
           name="price"
-          type="number"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
           placeholder="ex. 50000"

@@ -11,7 +11,14 @@ export function toItemIconData(entry: ItemCatalogEntry): ItemIconData {
     // fields; the raw name still reads better than nothing.
     displayName: entry.display_name || entry.name,
     iconKey: entry.icon_key,
+    iconUrl: entry.icon_url ?? "",
     slots: entry.slots ?? [],
     grade: entry.grade,
   };
+}
+
+/** Return only the manifest-approved URL supplied by the web-api. */
+export function itemIconUrl(item: ItemIconData, iconPackVersion: string): string | null {
+  if (!item.iconKey || !item.iconUrl || !iconPackVersion) return null;
+  return item.iconUrl;
 }

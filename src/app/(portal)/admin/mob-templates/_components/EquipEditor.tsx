@@ -99,9 +99,16 @@ export function EquipEditor({
         value: String(it.item_index),
         label: it.display_name || it.name,
         hint: `#${it.item_index}`,
-        leading: <ItemIcon item={toItemIconData(it)} itemIndex={it.item_index} size="sm" />,
+        leading: (
+          <ItemIcon
+            item={toItemIconData(it)}
+            itemIndex={it.item_index}
+            iconPackVersion={catalog.iconPackVersion}
+            size="sm"
+          />
+        ),
       })),
-    [catalog.items],
+    [catalog.items, catalog.iconPackVersion],
   );
 
   const filledCount = useMemo(() => Object.values(slots).filter(isFilled).length, [slots]);
@@ -247,7 +254,12 @@ export function EquipEditor({
                   </span>
                   {filled ? (
                     <>
-                      <ItemIcon item={itemIcon(s?.itemIndex ?? "")} itemIndex={Number(s?.itemIndex)} size="md" />
+                      <ItemIcon
+                        item={itemIcon(s?.itemIndex ?? "")}
+                        itemIndex={Number(s?.itemIndex)}
+                        iconPackVersion={catalog.iconPackVersion}
+                        size="md"
+                      />
                       <span
                         style={{
                           width: "100%",
@@ -321,7 +333,12 @@ export function EquipEditor({
           >
             {selectedFilled ? (
               <>
-                <ItemIcon item={itemIcon(selected.itemIndex)} itemIndex={Number(selected.itemIndex)} size="sm" />
+                <ItemIcon
+                  item={itemIcon(selected.itemIndex)}
+                  itemIndex={Number(selected.itemIndex)}
+                  iconPackVersion={catalog.iconPackVersion}
+                  size="sm"
+                />
                 <span>{selectedName}</span>
               </>
             ) : (

@@ -7,6 +7,8 @@ export type CatalogState = {
   items: ItemCatalogEntry[];
   /** item_index → entry, built once with the list. Use it to join tables/grids. */
   byIndex: Map<number, ItemCatalogEntry>;
+  catalogVersion: string;
+  iconPackVersion: string;
   loading: boolean;
   // "ok" → picker ready; "empty" → web-api without -content; "unavailable" → fetch failed.
   status: LookupStatus;
@@ -14,7 +16,13 @@ export type CatalogState = {
   available: boolean;
 };
 
-type CatalogLoad = { items: ItemCatalogEntry[]; byIndex: Map<number, ItemCatalogEntry>; status: LookupStatus };
+type CatalogLoad = {
+  items: ItemCatalogEntry[];
+  byIndex: Map<number, ItemCatalogEntry>;
+  catalogVersion: string;
+  iconPackVersion: string;
+  status: LookupStatus;
+};
 
 const EMPTY_INDEX: Map<number, ItemCatalogEntry> = new Map();
 
@@ -30,16 +38,41 @@ function loadItemCatalog(): Promise<CatalogLoad> {
         if (!res.ok) {
           // Allow a later retry (e.g. transient upstream failure).
           cache = undefined;
-          return { items: [], byIndex: EMPTY_INDEX, status: "unavailable" as LookupStatus };
+          return {
+            items: [],
+            byIndex: EMPTY_INDEX,
+            catalogVersion: "",
+            iconPackVersion: "",
+            status: "unavailable" as LookupStatus,
+          };
         }
-        const data = (await res.json()) as { items?: ItemCatalogEntry[] };
+        const data = (await res.json()) as {
+          items?: ItemCatalogEntry[];
+          catalog_version?: string;
+          icon_pack_version?: string;
+        };
         const items = data.items ?? [];
         const byIndex = new Map(items.map((it) => [it.item_index, it]));
-        return { items, byIndex, status: (items.length > 0 ? "ok" : "empty") as LookupStatus };
+        // Empty version means the web-api has no configured content. Serve the
+        // fallback now, but let the next mount retry instead of pinning it.
+        if (!data.catalog_version) cache = undefined;
+        return {
+          items,
+          byIndex,
+          catalogVersion: data.catalog_version ?? "",
+          iconPackVersion: data.icon_pack_version ?? "",
+          status: (items.length > 0 ? "ok" : "empty") as LookupStatus,
+        };
       })
       .catch(() => {
         cache = undefined;
-        return { items: [], byIndex: EMPTY_INDEX, status: "unavailable" as LookupStatus };
+        return {
+          items: [],
+          byIndex: EMPTY_INDEX,
+          catalogVersion: "",
+          iconPackVersion: "",
+          status: "unavailable" as LookupStatus,
+        };
       });
   }
   return cache;
@@ -49,6 +82,8 @@ export function useItemCatalog(): CatalogState {
   const [state, setState] = useState<CatalogState>({
     items: [],
     byIndex: EMPTY_INDEX,
+    catalogVersion: "",
+    iconPackVersion: "",
     loading: true,
     status: "empty",
     available: false,
@@ -56,8 +91,18 @@ export function useItemCatalog(): CatalogState {
 
   useEffect(() => {
     let active = true;
-    loadItemCatalog().then(({ items, byIndex, status }) => {
-      if (active) setState({ items, byIndex, loading: false, status, available: status === "ok" });
+    loadItemCatalog().then(({ items, byIndex, catalogVersion, iconPackVersion, status }) => {
+      if (active) {
+        setState({
+          items,
+          byIndex,
+          catalogVersion,
+          iconPackVersion,
+          loading: false,
+          status,
+          available: status === "ok",
+        });
+      }
     });
     return () => {
       active = false;

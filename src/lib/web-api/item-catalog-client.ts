@@ -11,7 +11,11 @@ import type { ItemCatalogEntry } from "@/lib/npc/types";
 // web-api runs without -content/W2PP_CONTENT.
 
 export type ListItemsRequest = Record<string, never>;
-export type ListItemsResponse = { items: ItemCatalogEntry[]; catalog_version: string };
+export type ListItemsResponse = {
+  items: ItemCatalogEntry[];
+  catalog_version: string;
+  icon_pack_version: string;
+};
 
 type Cb<R> = (err: grpc.ServiceError | null, res: R) => void;
 

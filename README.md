@@ -31,11 +31,10 @@ ambiente e pré-requisitos operacionais estão em
 
 ## Ícones de item
 
-Toda tela que mostra um item usa `ItemIcon`, que integra contra a chave visual
-(`icon_key`) publicada pelo `web-api` — o servidor não tem as imagens dos itens.
-Hoje o portal renderiza sempre o **fallback**; quando existir um pacote de
-imagens, defina `NEXT_PUBLIC_ITEM_ICON_BASE` (ex. `/item-icons`) e as imagens
-passam a ser usadas por cima do fallback, sem mudança de código. Detalhes em
+Toda tela que mostra um item usa `ItemIcon`. O BFF faz join por `item_index` e
+usa a `icon_url` HTTPS publicada pelo `web-api`; `icon_key` é opaca e nenhuma URL
+é reconstruída no frontend. Ausência de catálogo, versão, chave ou URL mantém o
+fallback visível. Detalhes em
 [`docs/item-icons.md`](docs/item-icons.md).
 
 ## Learn More

@@ -12,9 +12,37 @@ import { PickerNote } from "./PickerNote";
 import { useItemCatalog } from "./catalog";
 import { errorMessage, PROPAGATION_NOTICE, setShop, type ShopItemPayload } from "./api";
 
-// item_index and quantity keyed by slot; empty item_index means "slot vazio".
-// SetNpcShop replaces the entire shop, so we always send every non-empty slot.
-type SlotState = Record<number, { itemIndex: string; quantity: string }>;
+type EffectField = "eff1" | "effv1" | "eff2" | "effv2" | "eff3" | "effv3";
+type SlotEntry = { itemIndex: string; quantity: string } & Record<EffectField, string>;
+
+// SetNpcShop replaces the entire shop, so state includes every field that must
+// survive a round-trip. Empty itemIndex means "slot vazio".
+type SlotState = Record<number, SlotEntry>;
+
+const EFFECT_PAIRS = [
+  { effect: "eff1", value: "effv1", label: "Efeito 1" },
+  { effect: "eff2", value: "effv2", label: "Efeito 2" },
+  { effect: "eff3", value: "effv3", label: "Efeito 3" },
+] as const;
+
+function emptySlot(): SlotEntry {
+  return {
+    itemIndex: "",
+    quantity: "1",
+    eff1: "0",
+    effv1: "0",
+    eff2: "0",
+    effv2: "0",
+    eff3: "0",
+    effv3: "0",
+  };
+}
+
+function int32(value: string): number | null {
+  if (!/^-?\d+$/.test(value.trim())) return null;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= -2147483648 && parsed <= 2147483647 ? parsed : null;
+}
 
 const panel: CSSProperties = {
   background: "var(--grad-panel)",
@@ -94,6 +122,12 @@ function initialSlots(shop: AdminNpcShopItem[]): SlotState {
     state[item.slot] = {
       itemIndex: String(item.item_index),
       quantity: String(item.quantity || 1),
+      eff1: String(item.eff1),
+      effv1: String(item.effv1),
+      eff2: String(item.eff2),
+      effv2: String(item.effv2),
+      eff3: String(item.eff3),
+      effv3: String(item.effv3),
     };
   }
   return state;
@@ -113,9 +147,17 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
         value: String(it.item_index),
         label: it.display_name || it.name,
         hint: `#${it.item_index}`,
-        leading: <ItemIcon item={toItemIconData(it)} itemIndex={it.item_index} size="sm" />,
+        keywords: it.name,
+        leading: (
+          <ItemIcon
+            item={toItemIconData(it)}
+            itemIndex={it.item_index}
+            iconPackVersion={catalog.iconPackVersion}
+            size="sm"
+          />
+        ),
       })),
-    [catalog.items],
+    [catalog.items, catalog.iconPackVersion],
   );
 
   const canSell = merchantHasShop(npc.merchant);
@@ -134,15 +176,34 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
     return count;
   }
 
-  function setSlot(slot: number, patch: Partial<{ itemIndex: string; quantity: string }>) {
+  function setSlot(slot: number, patch: Partial<SlotEntry>) {
     setSlots((s) => ({
       ...s,
       [slot]: {
-        itemIndex: s[slot]?.itemIndex ?? "",
-        quantity: s[slot]?.quantity ?? "1",
+        ...(s[slot] ?? emptySlot()),
         ...patch,
       },
     }));
+  }
+
+  function setSlotItem(slot: number, itemIndex: string) {
+    setSlots((state) => {
+      const previous = state[slot] ?? emptySlot();
+      if (previous.itemIndex === itemIndex) return state;
+      return {
+        ...state,
+        [slot]: {
+          ...previous,
+          itemIndex,
+          eff1: "0",
+          effv1: "0",
+          eff2: "0",
+          effv2: "0",
+          eff3: "0",
+          effv3: "0",
+        },
+      };
+    });
   }
 
   function selectTab(nextTab: number) {
@@ -171,7 +232,7 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
     setMsg(null);
 
     const items: ShopItemPayload[] = [];
-    for (const [slotKey, raw] of Object.entries(slots)) {
+    for (const [slotKey, raw] of Object.entries(slots).sort(([a], [b]) => Number(a) - Number(b))) {
       const value = raw.itemIndex.trim();
       if (value === "") continue;
       const item_index = Number(value);
@@ -181,27 +242,47 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
         return;
       }
       const quantityRaw = raw.quantity.trim();
-      const quantity = quantityRaw === "" ? 1 : Number(quantityRaw);
+      const parsedQuantity = quantityRaw === "" ? 1 : Number(quantityRaw);
+      const quantity = parsedQuantity === 0 ? 1 : parsedQuantity;
       if (!Number.isInteger(quantity) || quantity < 1 || quantity > 255) {
-        setMsg({ kind: "error", text: `Slot ${slotKey}: quantity deve ser inteiro entre 1 e 255.` });
+        setMsg({ kind: "error", text: `Slot ${slotKey}: quantity deve ser 0 ou inteiro entre 1 e 255.` });
+        setBusy(false);
+        return;
+      }
+
+      const effects = Object.fromEntries(
+        EFFECT_PAIRS.flatMap(({ effect, value: effectValue }) => [
+          [effect, int32(raw[effect])],
+          [effectValue, int32(raw[effectValue])],
+        ]),
+      ) as Record<EffectField, number | null>;
+      if (Object.values(effects).some((effect) => effect == null)) {
+        setMsg({ kind: "error", text: `Slot ${slotKey}: efeitos devem ser inteiros int32.` });
+        setBusy(false);
+        return;
+      }
+      if (effects.eff1 === 61 || effects.eff2 === 61 || effects.eff3 === 61) {
+        setMsg({ kind: "error", text: `Slot ${slotKey}: não use o efeito 61; ajuste a quantidade.` });
         setBusy(false);
         return;
       }
       items.push({
         slot: Number(slotKey),
         item_index,
-        eff1: 0,
-        effv1: 0,
-        eff2: 0,
-        effv2: 0,
-        eff3: 0,
-        effv3: 0,
+        eff1: effects.eff1!,
+        effv1: effects.effv1!,
+        eff2: effects.eff2!,
+        effv2: effects.effv2!,
+        eff3: effects.eff3!,
+        effv3: effects.effv3!,
         quantity,
       });
     }
 
     try {
       await setShop(npc.id, items);
+      // Reflect server normalization locally (notably quantity 0/blank -> 1).
+      setSlots(initialSlots(items));
       setMsg({ kind: "ok", text: PROPAGATION_NOTICE });
     } catch (err) {
       setMsg({ kind: "error", text: errorMessage(err) });
@@ -213,7 +294,7 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
   const current = SHOP_TABS[tab];
   const slotList: number[] = [];
   for (let s = current.from; s <= current.to; s++) slotList.push(s);
-  const selected = slots[selectedSlot] ?? { itemIndex: "", quantity: "1" };
+  const selected = slots[selectedSlot] ?? emptySlot();
   const selectedFilled = selected.itemIndex.trim() !== "" && Number(selected.itemIndex) > 0;
   const selectedName = itemLabel(selected.itemIndex);
 
@@ -325,7 +406,12 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
 
                     {filled ? (
                       <>
-                        <ItemIcon item={itemIcon(itemValue)} itemIndex={Number(itemValue)} size="md" />
+                        <ItemIcon
+                          item={itemIcon(itemValue)}
+                          itemIndex={Number(itemValue)}
+                          iconPackVersion={catalog.iconPackVersion}
+                          size="md"
+                        />
                         <span
                           style={{
                             width: "100%",
@@ -484,7 +570,12 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
             >
               {selectedFilled ? (
                 <>
-                  <ItemIcon item={itemIcon(selected.itemIndex)} itemIndex={Number(selected.itemIndex)} size="md" />
+                  <ItemIcon
+                    item={itemIcon(selected.itemIndex)}
+                    itemIndex={Number(selected.itemIndex)}
+                    iconPackVersion={catalog.iconPackVersion}
+                    size="md"
+                  />
                   <span>#{selected.itemIndex}</span>
                 </>
               ) : (
@@ -522,7 +613,7 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
               key={selectedSlot}
               label="Item"
               value={selected.itemIndex}
-              onChange={(v) => setSlot(selectedSlot, { itemIndex: v })}
+              onChange={(v) => setSlotItem(selectedSlot, v)}
               options={itemOptions}
               available={catalog.available}
               loading={catalog.loading}
@@ -536,7 +627,7 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
               <span style={label}>Quantidade</span>
               <input
                 type="number"
-                min={1}
+                min={0}
                 max={255}
                 value={selected.quantity}
                 onChange={(e) => setSlot(selectedSlot, { quantity: e.target.value })}
@@ -545,13 +636,48 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
               />
             </label>
 
+            {selectedFilled ? (
+              <details>
+                <summary style={{ ...label, cursor: "pointer", color: "var(--gold-300)" }}>
+                  Efeitos opcionais
+                </summary>
+                <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
+                  {EFFECT_PAIRS.map(({ effect, value: effectValue, label: effectLabel }) => (
+                    <div key={effect} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                      <label style={{ display: "grid", gap: 6 }}>
+                        <span style={label}>{effectLabel}</span>
+                        <input
+                          type="number"
+                          value={selected[effect]}
+                          onChange={(e) => setSlot(selectedSlot, { [effect]: e.target.value })}
+                          style={inputStyle}
+                        />
+                      </label>
+                      <label style={{ display: "grid", gap: 6 }}>
+                        <span style={label}>Valor {effectLabel.slice(-1)}</span>
+                        <input
+                          type="number"
+                          value={selected[effectValue]}
+                          onChange={(e) => setSlot(selectedSlot, { [effectValue]: e.target.value })}
+                          style={inputStyle}
+                        />
+                      </label>
+                    </div>
+                  ))}
+                  <span style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text-muted)" }}>
+                    Não use o efeito 61 (EF_AMOUNT): packs são definidos somente pela quantidade.
+                  </span>
+                </div>
+              </details>
+            ) : null}
+
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               {selectedFilled ? (
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => setSlot(selectedSlot, { itemIndex: "", quantity: "1" })}
+                  onClick={() => setSlots((state) => ({ ...state, [selectedSlot]: emptySlot() }))}
                   aria-label={`Limpar slot ${selectedSlot}`}
                   title="Limpar este slot"
                 >

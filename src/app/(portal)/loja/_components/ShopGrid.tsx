@@ -8,9 +8,9 @@ import type { DonateShopItem } from "@/lib/donate/types";
 import { BuyOfferButton } from "./BuyOfferButton";
 import { TopupModal } from "./TopupModal";
 
-type Props = { items: DonateShopItem[]; icons: ItemIconMap; initialBalance: string };
+type Props = { items: DonateShopItem[]; icons: ItemIconMap; iconPackVersion: string; initialBalance: string };
 
-export function ShopGrid({ items, icons, initialBalance }: Props) {
+export function ShopGrid({ items, icons, iconPackVersion, initialBalance }: Props) {
   const [balance, setBalance] = useState(initialBalance);
   const [topupOpen, setTopupOpen] = useState(false);
 
@@ -84,7 +84,12 @@ export function ShopGrid({ items, icons, initialBalance }: Props) {
                   color: "var(--gold-300)",
                 }}
               >
-                <ItemIcon item={icons[it.item_index]} itemIndex={it.item_index} size="lg" />
+                <ItemIcon
+                  item={icons[it.item_index]}
+                  itemIndex={it.item_index}
+                  iconPackVersion={iconPackVersion}
+                  size="lg"
+                />
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   {/* Kept visible: support and moderators troubleshoot by index. */}
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)" }}>

@@ -20,5 +20,9 @@ export async function GET() {
 
   const status = httpForAdminResult(resp.result);
   if (status !== 200) return NextResponse.json({ result: resp.result }, { status });
-  return NextResponse.json({ items: resp.items });
+  return NextResponse.json({
+    items: resp.items,
+    catalog_version: resp.catalog_version,
+    icon_pack_version: resp.icon_pack_version,
+  });
 }

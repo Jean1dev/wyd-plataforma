@@ -10,7 +10,7 @@ import { useItemCatalog } from "../../npcs/_components/catalog";
 import { deleteRewardItem, errorMessage, setRewardItemEnabled } from "./api";
 import { RewardItemForm } from "./RewardItemForm";
 
-function Row({ item, icon }: { item: DailyRewardItem; icon?: ItemIconData }) {
+function Row({ item, icon, iconPackVersion }: { item: DailyRewardItem; icon?: ItemIconData; iconPackVersion: string }) {
   const router = useRouter();
   const [enabled, setEnabled] = useState(item.enabled);
   const [editing, setEditing] = useState(false);
@@ -75,7 +75,7 @@ function Row({ item, icon }: { item: DailyRewardItem; icon?: ItemIconData }) {
       </td>
       <td style={cell}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <ItemIcon item={icon} itemIndex={item.item_index} size="sm" />
+          <ItemIcon item={icon} itemIndex={item.item_index} iconPackVersion={iconPackVersion} size="sm" />
           <div style={{ minWidth: 0 }}>
             <div style={{ fontFamily: "var(--font-mono)" }}>#{item.item_index}</div>
             {icon ? <div style={{ color: "var(--text-muted)", fontSize: 12 }}>{icon.displayName}</div> : null}
@@ -158,7 +158,14 @@ export function RewardItemsTable({ items }: { items: DailyRewardItem[] }) {
         <tbody>
           {items.map((item) => {
             const entry = catalog.byIndex.get(item.item_index);
-            return <Row key={item.id} item={item} icon={entry ? toItemIconData(entry) : undefined} />;
+            return (
+              <Row
+                key={item.id}
+                item={item}
+                icon={entry ? toItemIconData(entry) : undefined}
+                iconPackVersion={catalog.iconPackVersion}
+              />
+            );
           })}
         </tbody>
       </table>

@@ -282,7 +282,12 @@ function ItemResults({
                   </td>
                   <td style={cell}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <ItemIcon item={iconFor(catalog.byIndex, item.itemIndex)} itemIndex={item.itemIndex} size="sm" />
+                      <ItemIcon
+                        item={iconFor(catalog.byIndex, item.itemIndex)}
+                        itemIndex={item.itemIndex}
+                        iconPackVersion={catalog.iconPackVersion}
+                        size="sm"
+                      />
                       <span>{item.itemName || "-"}</span>
                     </div>
                   </td>
@@ -410,6 +415,7 @@ function MobResults({
                                     <ItemIcon
                                       item={iconFor(catalog.byIndex, item.itemIndex)}
                                       itemIndex={item.itemIndex}
+                                      iconPackVersion={catalog.iconPackVersion}
                                       size="sm"
                                     />
                                     <span>{item.itemName || "-"}</span>

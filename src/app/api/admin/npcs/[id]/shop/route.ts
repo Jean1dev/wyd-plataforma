@@ -11,9 +11,10 @@ function int(v: unknown): number | null {
   return Number.isInteger(n) ? n : null;
 }
 
-function eff(v: unknown): number {
+function optionalInt32(v: unknown): number | null {
+  if (v == null || v === "") return 0;
   const n = int(v);
-  return n == null ? 0 : n;
+  return n != null && n >= -2147483648 && n <= 2147483647 ? n : null;
 }
 
 function quantity(v: unknown): { ok: true; value: number } | { ok: false } {
@@ -39,22 +40,34 @@ function parseItems(raw: unknown): { ok: true; items: AdminNpcShopItem[] } | { o
     const slot = int(e.slot);
     const item_index = int(e.item_index);
     const qty = quantity(e.quantity);
+    const eff1 = optionalInt32(e.eff1);
+    const effv1 = optionalInt32(e.effv1);
+    const eff2 = optionalInt32(e.eff2);
+    const effv2 = optionalInt32(e.effv2);
+    const eff3 = optionalInt32(e.eff3);
+    const effv3 = optionalInt32(e.effv3);
     if (slot == null || slot < 0 || slot >= SHOP_SLOT_COUNT) return { ok: false, error: "slot_out_of_range" };
     if (seen.has(slot)) return { ok: false, error: "slot_duplicated" };
     if (item_index == null || item_index <= 0) return { ok: false, error: "item_index_invalid" };
     if (!qty.ok) return { ok: false, error: "quantity_invalid" };
     if (qty.value < 1 || qty.value > 255) return { ok: false, error: "quantity_invalid" };
+    if ([eff1, effv1, eff2, effv2, eff3, effv3].some((v) => v == null)) {
+      return { ok: false, error: "effect_invalid" };
+    }
+    if (eff1 === 61 || eff2 === 61 || eff3 === 61) {
+      return { ok: false, error: "effect_amount_derived" };
+    }
     seen.add(slot);
 
     items.push({
       slot,
       item_index,
-      eff1: eff(e.eff1),
-      effv1: eff(e.effv1),
-      eff2: eff(e.eff2),
-      effv2: eff(e.effv2),
-      eff3: eff(e.eff3),
-      effv3: eff(e.effv3),
+      eff1: eff1!,
+      effv1: effv1!,
+      eff2: eff2!,
+      effv2: effv2!,
+      eff3: eff3!,
+      effv3: effv3!,
       quantity: qty.value,
     });
   }
