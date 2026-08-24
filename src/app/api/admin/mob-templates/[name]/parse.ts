@@ -1,5 +1,6 @@
 import type { AdminMobTemplateEquipItem, AdminMobTemplateStat } from "@/lib/mob-template/types";
 import { EQUIP_SLOT_COUNT, sanitizeExpString } from "@/lib/mob-template/domain";
+import { parsePositiveInt32 } from "@/lib/npc/validation";
 import { int, text } from "@/lib/web-api/body-parse";
 
 type Parsed<T> = { ok: true; value: T } | { ok: false; error: string };
@@ -71,7 +72,7 @@ export function parseMobTemplateStatBody(raw: unknown, templateName: string): Pa
 
 // Parses and validates the full equip list (SetMobTemplateEquip replaces the
 // whole Equip[16]). Mirrors the web-api validation: unique slots in
-// [0, EQUIP_SLOT_COUNT-1], item_index > 0.
+// [0, EQUIP_SLOT_COUNT-1], item_index in positive int32 range.
 export function parseMobTemplateEquipItems(raw: unknown): Parsed<AdminMobTemplateEquipItem[]> {
   if (!Array.isArray(raw)) return { ok: false, error: "items_required" };
 
@@ -83,10 +84,10 @@ export function parseMobTemplateEquipItems(raw: unknown): Parsed<AdminMobTemplat
     const e = entry as Record<string, unknown>;
 
     const slot = int(e.slot);
-    const item_index = int(e.item_index);
+    const item_index = parsePositiveInt32(e.item_index);
     if (slot < 0 || slot >= EQUIP_SLOT_COUNT) return { ok: false, error: "slot_out_of_range" };
     if (seen.has(slot)) return { ok: false, error: "slot_duplicated" };
-    if (item_index <= 0) return { ok: false, error: "item_index_invalid" };
+    if (item_index == null) return { ok: false, error: "item_index_invalid" };
     seen.add(slot);
 
     items.push({

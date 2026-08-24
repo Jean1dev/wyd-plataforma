@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { X } from "lucide-react";
 import { Button, ItemIcon } from "@/components/ui";
 import { merchantHasShop, SHOP_TABS } from "@/lib/npc/domain";
+import { normalizeShopQuantity, parsePositiveInt32, parseUint8 } from "@/lib/npc/validation";
 import { toItemIconData } from "@/lib/item-catalog/view";
 import type { AdminNpc, AdminNpcShopItem } from "@/lib/npc/types";
 import { Combobox, type ComboOption } from "./Combobox";
@@ -36,12 +37,6 @@ function emptySlot(): SlotEntry {
     eff3: "0",
     effv3: "0",
   };
-}
-
-function int32(value: string): number | null {
-  if (!/^-?\d+$/.test(value.trim())) return null;
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed >= -2147483648 && parsed <= 2147483647 ? parsed : null;
 }
 
 const panel: CSSProperties = {
@@ -235,16 +230,14 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
     for (const [slotKey, raw] of Object.entries(slots).sort(([a], [b]) => Number(a) - Number(b))) {
       const value = raw.itemIndex.trim();
       if (value === "") continue;
-      const item_index = Number(value);
-      if (!Number.isInteger(item_index) || item_index <= 0) {
-        setMsg({ kind: "error", text: `Slot ${slotKey}: item_index deve ser inteiro > 0.` });
+      const item_index = parsePositiveInt32(value);
+      if (item_index == null) {
+        setMsg({ kind: "error", text: `Slot ${slotKey}: item_index deve estar entre 1 e 2147483647.` });
         setBusy(false);
         return;
       }
-      const quantityRaw = raw.quantity.trim();
-      const parsedQuantity = quantityRaw === "" ? 1 : Number(quantityRaw);
-      const quantity = parsedQuantity === 0 ? 1 : parsedQuantity;
-      if (!Number.isInteger(quantity) || quantity < 1 || quantity > 255) {
+      const quantity = normalizeShopQuantity(raw.quantity);
+      if (quantity == null) {
         setMsg({ kind: "error", text: `Slot ${slotKey}: quantity deve ser 0 ou inteiro entre 1 e 255.` });
         setBusy(false);
         return;
@@ -252,12 +245,12 @@ export function ShopEditor({ npc }: { npc: AdminNpc }) {
 
       const effects = Object.fromEntries(
         EFFECT_PAIRS.flatMap(({ effect, value: effectValue }) => [
-          [effect, int32(raw[effect])],
-          [effectValue, int32(raw[effectValue])],
+          [effect, parseUint8(raw[effect])],
+          [effectValue, parseUint8(raw[effectValue])],
         ]),
       ) as Record<EffectField, number | null>;
       if (Object.values(effects).some((effect) => effect == null)) {
-        setMsg({ kind: "error", text: `Slot ${slotKey}: efeitos devem ser inteiros int32.` });
+        setMsg({ kind: "error", text: `Slot ${slotKey}: efeitos devem ser inteiros entre 0 e 255.` });
         setBusy(false);
         return;
       }

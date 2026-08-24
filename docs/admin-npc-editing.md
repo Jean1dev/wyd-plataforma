@@ -98,9 +98,12 @@ rotula ~90% dos NPCs; o resto cai numa aba **"Fora de região"** (é esperado, n
   `19` loja tipo 3, `100` NPC de quest. Outros valores → `INVALID`.
 - **Loja**: 27 slots (`0..26`) em **3 abas de 9** (`0..8` / `9..17` / `18..26`).
   `SetNpcShop` **substitui a loja inteira** — slots omitidos ficam vazios.
-  `slot` único em `[0,26]`; `item_index > 0`. Os efeitos existentes são
-  preservados ao editar; o efeito 61 (`EF_AMOUNT`) nunca é enviado, pois packs
-  são materializados pelo servidor a partir de `quantity` (vazio/0 vira 1).
+  `slot` único em `[0,26]`; `item_index` no intervalo positivo de `int32`
+  (`1..2147483647`). Os seis campos de efeito aceitam somente inteiros `0..255`
+  porque o backend os materializa como `uint8`; os efeitos existentes são
+  preservados ao editar. O código de efeito 61 (`EF_AMOUNT`) nunca é enviado em
+  `eff1`/`eff2`/`eff3` (valores `effv*` podem ser 61), pois packs são
+  materializados pelo servidor a partir de `quantity` (vazio/0 vira 1).
 - **Preço**: `SetItemPrice(item_index, price)` é **global por item** (vale em todos
   os NPCs). `price >= 0` define o override; `price < 0` limpa e volta ao catálogo.
   `ListItemPrices` devolve os overrides ativos (`item_index, price`) para popular a

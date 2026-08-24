@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { X } from "lucide-react";
 import { Button, ItemIcon } from "@/components/ui";
 import { EQUIP_SLOT_COUNT } from "@/lib/mob-template/domain";
+import { parsePositiveInt32 } from "@/lib/npc/validation";
 import { toItemIconData } from "@/lib/item-catalog/view";
 import { slotsLabel } from "@/lib/item-catalog/slots";
 import type { AdminMobTemplateEquipItem } from "@/lib/mob-template/types";
@@ -138,9 +139,9 @@ export function EquipEditor({
     const items: AdminMobTemplateEquipItem[] = [];
     for (const [slotKey, raw] of Object.entries(slots)) {
       if (!isFilled(raw)) continue;
-      const item_index = Number(raw.itemIndex.trim());
-      if (!Number.isInteger(item_index) || item_index <= 0) {
-        setMsg({ kind: "error", text: `Slot ${slotKey}: item_index deve ser inteiro > 0.` });
+      const item_index = parsePositiveInt32(raw.itemIndex);
+      if (item_index == null) {
+        setMsg({ kind: "error", text: `Slot ${slotKey}: item_index deve estar entre 1 e 2147483647.` });
         setBusy(false);
         return;
       }
