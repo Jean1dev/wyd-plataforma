@@ -6,7 +6,7 @@ import { Badge, Button } from "@/components/ui";
 import { MERCHANT_TYPES } from "@/lib/npc/domain";
 import { CITY_REGION_NAMES, regionFor, regionLabel } from "@/lib/npc/regions";
 import type { AdminNpc } from "@/lib/npc/types";
-import { errorMessage, setVisibility } from "./api";
+import { errorMessage, PROPAGATION_NOTICE, setVisibility } from "./api";
 
 function merchantLabel(v: number) {
   return MERCHANT_TYPES.find((m) => m.value === v)?.label ?? `#${v}`;
@@ -32,18 +32,19 @@ function Row({
   onEnabledChange: (id: string, enabled: boolean) => void;
 }) {
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
 
   async function toggle() {
     const next = !enabled;
     setBusy(true);
-    setError(null);
+    setNotice(null);
     onEnabledChange(npc.id, next); // optimistic
     try {
       await setVisibility(npc.id, next);
+      setNotice({ kind: "ok", text: PROPAGATION_NOTICE });
     } catch (err) {
       onEnabledChange(npc.id, !next); // revert
-      setError(errorMessage(err));
+      setNotice({ kind: "error", text: errorMessage(err) });
     } finally {
       setBusy(false);
     }
@@ -81,7 +82,19 @@ function Row({
           <input type="checkbox" checked={enabled} disabled={busy} onChange={toggle} style={{ accentColor: "var(--gold-600)", width: 16, height: 16 }} />
           {enabled ? <Badge variant="gold">Visível</Badge> : <span style={{ color: "var(--text-muted)", fontSize: 12 }}>Oculto</span>}
         </label>
-        {error ? <div style={{ color: "var(--danger-400, #d97b7b)", fontSize: 11, marginTop: 4 }}>{error}</div> : null}
+        {notice ? (
+          <div
+            aria-live="polite"
+            style={{
+              color: notice.kind === "ok" ? "var(--emerald-400)" : "var(--danger-400, #d97b7b)",
+              fontSize: 11,
+              marginTop: 4,
+              maxWidth: 260,
+            }}
+          >
+            {notice.text}
+          </div>
+        ) : null}
       </td>
       <td style={{ ...cell, textAlign: "right" }}>
         <Button href={`/admin/npcs/${npc.id}`} size="sm" variant="ghost">

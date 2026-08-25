@@ -6,6 +6,8 @@ export type ComboOption = {
   value: string;
   label: string;
   hint?: string;
+  /** Extra searchable text that is not rendered (e.g. a raw catalog name). */
+  keywords?: string;
   /** Optional node rendered before the label in the dropdown row (e.g. an ItemIcon). */
   leading?: React.ReactNode;
 };
@@ -89,7 +91,11 @@ export function Combobox({
     const q = query.trim().toLowerCase();
     const base = q
       ? options.filter(
-          (o) => o.label.toLowerCase().includes(q) || o.value.includes(q) || o.hint?.toLowerCase().includes(q),
+          (o) =>
+            o.label.toLowerCase().includes(q) ||
+            o.value.includes(q) ||
+            o.hint?.toLowerCase().includes(q) ||
+            o.keywords?.toLowerCase().includes(q),
         )
       : options;
     return base.slice(0, maxResults);

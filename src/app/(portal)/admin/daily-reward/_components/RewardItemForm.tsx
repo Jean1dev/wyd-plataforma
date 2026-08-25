@@ -61,9 +61,16 @@ export function RewardItemForm({
         value: String(it.item_index),
         label: it.display_name || it.name,
         hint: String(it.item_index),
-        leading: <ItemIcon item={toItemIconData(it)} itemIndex={it.item_index} size="sm" />,
+        leading: (
+          <ItemIcon
+            item={toItemIconData(it)}
+            itemIndex={it.item_index}
+            iconPackVersion={catalog.iconPackVersion}
+            size="sm"
+          />
+        ),
       })),
-    [catalog.items],
+    [catalog.items, catalog.iconPackVersion],
   );
 
   const [form, setForm] = useState<DailyRewardItemPayload>(item ?? emptyItem);

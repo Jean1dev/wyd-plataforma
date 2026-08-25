@@ -10,6 +10,8 @@ export type ItemIconData = {
   itemIndex: number;
   displayName: string;
   iconKey: string;
+  /** Manifest-approved public URL. Never derive it from iconKey. */
+  iconUrl: string;
   slots: string[];
   grade: number;
 };
@@ -20,3 +22,8 @@ export type ItemIconData = {
  * from a server page — project it with pickItemIcons() first.
  */
 export type ItemIconMap = Record<number, ItemIconData>;
+
+export type ItemIconSelection = {
+  icons: ItemIconMap;
+  iconPackVersion: string;
+};

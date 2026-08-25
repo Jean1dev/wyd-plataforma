@@ -9,6 +9,7 @@ import { ClaimRewardButton } from "./ClaimRewardButton";
 type Props = {
   items: DailyRewardItem[];
   icons: ItemIconMap;
+  iconPackVersion: string;
   initialClaimedToday: boolean;
   initialClaimedItemId: string;
   initialClaimedItemTitle: string;
@@ -20,6 +21,7 @@ type Props = {
 export function RewardGrid({
   items,
   icons,
+  iconPackVersion,
   initialClaimedToday,
   initialClaimedItemId,
   initialClaimedItemTitle,
@@ -101,7 +103,12 @@ export function RewardGrid({
                     color: "var(--gold-300)",
                   }}
                 >
-                  <ItemIcon item={icons[it.item_index]} itemIndex={it.item_index} size="lg" />
+                  <ItemIcon
+                    item={icons[it.item_index]}
+                    itemIndex={it.item_index}
+                    iconPackVersion={iconPackVersion}
+                    size="lg"
+                  />
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     {/* Kept visible: support and moderators troubleshoot by index. */}
                     <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)" }}>

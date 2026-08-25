@@ -11,7 +11,7 @@ import { useItemCatalog } from "../../npcs/_components/catalog";
 import { deleteDonateItem, errorMessage, setDonateItemEnabled } from "./api";
 import { DonateItemForm } from "./DonateItemForm";
 
-function Row({ item, icon }: { item: DonateShopItem; icon?: ItemIconData }) {
+function Row({ item, icon, iconPackVersion }: { item: DonateShopItem; icon?: ItemIconData; iconPackVersion: string }) {
   const router = useRouter();
   const [enabled, setEnabled] = useState(item.enabled);
   const [editing, setEditing] = useState(false);
@@ -76,7 +76,7 @@ function Row({ item, icon }: { item: DonateShopItem; icon?: ItemIconData }) {
       </td>
       <td style={cell}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <ItemIcon item={icon} itemIndex={item.item_index} size="sm" />
+          <ItemIcon item={icon} itemIndex={item.item_index} iconPackVersion={iconPackVersion} size="sm" />
           <div style={{ minWidth: 0 }}>
             <div style={{ fontFamily: "var(--font-mono)" }}>#{item.item_index}</div>
             {icon ? <div style={{ color: "var(--text-muted)", fontSize: 12 }}>{icon.displayName}</div> : null}
@@ -163,7 +163,14 @@ export function DonateItemsTable({ items }: { items: DonateShopItem[] }) {
         <tbody>
           {items.map((item) => {
             const entry = catalog.byIndex.get(item.item_index);
-            return <Row key={item.id} item={item} icon={entry ? toItemIconData(entry) : undefined} />;
+            return (
+              <Row
+                key={item.id}
+                item={item}
+                icon={entry ? toItemIconData(entry) : undefined}
+                iconPackVersion={catalog.iconPackVersion}
+              />
+            );
           })}
         </tbody>
       </table>

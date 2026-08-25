@@ -31,7 +31,9 @@ export default async function RecompensasPage() {
   const rewards = await loadRewards();
   // DailyRewardItem carries no visual fields — join by item_index against the
   // catalog, projected down to the offers on screen.
-  const icons = await pickItemIcons(rewards.status === "ok" ? rewards.items.map((it) => it.item_index) : []);
+  const { icons, iconPackVersion } = await pickItemIcons(
+    rewards.status === "ok" ? rewards.items.map((it) => it.item_index) : [],
+  );
 
   return (
     <div className="wyd-screen" style={{ maxWidth: 1140, margin: "0 auto", padding: "32px 24px 72px" }}>
@@ -81,6 +83,7 @@ export default async function RecompensasPage() {
         <RewardGrid
           items={rewards.items}
           icons={icons}
+          iconPackVersion={iconPackVersion}
           initialClaimedToday={rewards.claimedToday}
           initialClaimedItemId={rewards.claimedItemId}
           initialClaimedItemTitle={rewards.claimedItemTitle}

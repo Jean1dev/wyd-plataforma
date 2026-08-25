@@ -1,7 +1,6 @@
 import { getSession } from "@/lib/auth/session";
 import { donateShopRpc } from "@/lib/web-api/donate-shop-client";
 import { pickItemIcons } from "@/lib/item-catalog/catalog";
-import type { ItemIconMap } from "@/lib/item-catalog/types";
 import type { ShopLoadState } from "@/lib/donate/types";
 import { ShopGrid } from "./_components/ShopGrid";
 
@@ -25,7 +24,7 @@ export default async function LojaPage() {
   // DonateShopItem carries no visual fields — join by item_index against the
   // catalog, projected down to the offers on screen. An empty map is fine: the
   // grid falls back to the generic icon.
-  const icons: ItemIconMap = await pickItemIcons(shop.items.map((it) => it.item_index));
+  const { icons, iconPackVersion } = await pickItemIcons(shop.items.map((it) => it.item_index));
 
   return (
     <div className="wyd-screen" style={{ maxWidth: 1320, margin: "0 auto", padding: "32px 24px 72px" }}>
@@ -59,7 +58,12 @@ export default async function LojaPage() {
           Não foi possível carregar a loja agora. Verifique sua sessão e tente novamente.
         </div>
       ) : (
-        <ShopGrid items={shop.items} icons={icons} initialBalance={shop.balance} />
+        <ShopGrid
+          items={shop.items}
+          icons={icons}
+          iconPackVersion={iconPackVersion}
+          initialBalance={shop.balance}
+        />
       )}
     </div>
   );

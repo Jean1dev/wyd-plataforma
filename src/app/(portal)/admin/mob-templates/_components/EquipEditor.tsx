@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { X } from "lucide-react";
 import { Button, ItemIcon } from "@/components/ui";
 import { EQUIP_SLOT_COUNT } from "@/lib/mob-template/domain";
+import { parsePositiveInt32 } from "@/lib/npc/validation";
 import { toItemIconData } from "@/lib/item-catalog/view";
 import { slotsLabel } from "@/lib/item-catalog/slots";
 import type { AdminMobTemplateEquipItem } from "@/lib/mob-template/types";
@@ -99,9 +100,16 @@ export function EquipEditor({
         value: String(it.item_index),
         label: it.display_name || it.name,
         hint: `#${it.item_index}`,
-        leading: <ItemIcon item={toItemIconData(it)} itemIndex={it.item_index} size="sm" />,
+        leading: (
+          <ItemIcon
+            item={toItemIconData(it)}
+            itemIndex={it.item_index}
+            iconPackVersion={catalog.iconPackVersion}
+            size="sm"
+          />
+        ),
       })),
-    [catalog.items],
+    [catalog.items, catalog.iconPackVersion],
   );
 
   const filledCount = useMemo(() => Object.values(slots).filter(isFilled).length, [slots]);
@@ -131,9 +139,9 @@ export function EquipEditor({
     const items: AdminMobTemplateEquipItem[] = [];
     for (const [slotKey, raw] of Object.entries(slots)) {
       if (!isFilled(raw)) continue;
-      const item_index = Number(raw.itemIndex.trim());
-      if (!Number.isInteger(item_index) || item_index <= 0) {
-        setMsg({ kind: "error", text: `Slot ${slotKey}: item_index deve ser inteiro > 0.` });
+      const item_index = parsePositiveInt32(raw.itemIndex);
+      if (item_index == null) {
+        setMsg({ kind: "error", text: `Slot ${slotKey}: item_index deve estar entre 1 e 2147483647.` });
         setBusy(false);
         return;
       }
@@ -247,7 +255,12 @@ export function EquipEditor({
                   </span>
                   {filled ? (
                     <>
-                      <ItemIcon item={itemIcon(s?.itemIndex ?? "")} itemIndex={Number(s?.itemIndex)} size="md" />
+                      <ItemIcon
+                        item={itemIcon(s?.itemIndex ?? "")}
+                        itemIndex={Number(s?.itemIndex)}
+                        iconPackVersion={catalog.iconPackVersion}
+                        size="md"
+                      />
                       <span
                         style={{
                           width: "100%",
@@ -321,7 +334,12 @@ export function EquipEditor({
           >
             {selectedFilled ? (
               <>
-                <ItemIcon item={itemIcon(selected.itemIndex)} itemIndex={Number(selected.itemIndex)} size="sm" />
+                <ItemIcon
+                  item={itemIcon(selected.itemIndex)}
+                  itemIndex={Number(selected.itemIndex)}
+                  iconPackVersion={catalog.iconPackVersion}
+                  size="sm"
+                />
                 <span>{selectedName}</span>
               </>
             ) : (

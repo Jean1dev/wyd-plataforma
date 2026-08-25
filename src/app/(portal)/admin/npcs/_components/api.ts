@@ -52,7 +52,7 @@ export function setShop(npcId: string, items: ShopItemPayload[]) {
   return send("PUT", `/api/admin/npcs/${encodeURIComponent(npcId)}/shop`, { items });
 }
 
-export function setItemPrice(itemIndex: number, price: number) {
+export function setItemPrice(itemIndex: number, price: string) {
   return send("PUT", `/api/admin/items/${encodeURIComponent(itemIndex)}/price`, { price });
 }
 

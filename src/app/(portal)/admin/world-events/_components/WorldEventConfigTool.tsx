@@ -218,9 +218,16 @@ export function WorldEventConfigTool() {
         value: String(it.item_index),
         label: it.display_name || it.name,
         hint: `#${it.item_index}`,
-        leading: <ItemIcon item={toItemIconData(it)} itemIndex={it.item_index} size="sm" />,
+        leading: (
+          <ItemIcon
+            item={toItemIconData(it)}
+            itemIndex={it.item_index}
+            iconPackVersion={catalog.iconPackVersion}
+            size="sm"
+          />
+        ),
       })),
-    [catalog.items],
+    [catalog.items, catalog.iconPackVersion],
   );
 
   const dirty = useMemo(() => !sameConfig(form, saved), [form, saved]);

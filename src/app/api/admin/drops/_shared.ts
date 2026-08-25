@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
+import { parsePositiveInt32 } from "@/lib/npc/validation";
 import type { DropItemEntry, MobDropEntry } from "@/lib/npc/types";
-
-const INT32_MAX = 2147483647;
 
 type Parsed<T> = { ok: true; value: T } | { ok: false; response: NextResponse };
 
@@ -12,18 +11,14 @@ export function textParam(params: URLSearchParams, name: string): string {
 export function parseItemIndex(params: URLSearchParams): Parsed<number> {
   const raw = params.get("itemIndex");
   if (raw == null || raw.trim() === "") return { ok: true, value: 0 };
+  if (raw.trim() === "0") return { ok: true, value: 0 };
 
-  const value = raw.trim();
-  if (!/^\d+$/.test(value)) {
+  const itemIndex = parsePositiveInt32(raw);
+  if (itemIndex == null) {
     return { ok: false, response: NextResponse.json({ error: "item_index_invalid" }, { status: 422 }) };
   }
 
-  const n = Number(value);
-  if (!Number.isSafeInteger(n) || n > INT32_MAX) {
-    return { ok: false, response: NextResponse.json({ error: "item_index_invalid" }, { status: 422 }) };
-  }
-
-  return { ok: true, value: n };
+  return { ok: true, value: itemIndex };
 }
 
 export function parseIncludeZero(params: URLSearchParams): Parsed<boolean> {

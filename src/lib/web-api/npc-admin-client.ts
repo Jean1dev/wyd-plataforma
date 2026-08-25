@@ -48,14 +48,19 @@ export type UpsertNpcResponse = { result: AdminResult; npc_id: string };
 
 export type SetNpcVisibilityRequest = { moderator_id: string; npc_id: string; enabled: boolean };
 export type SetNpcShopRequest = { moderator_id: string; npc_id: string; items: AdminNpcShopItem[] };
-export type SetItemPriceRequest = { moderator_id: string; item_index: number; price: number };
+export type SetItemPriceRequest = { moderator_id: string; item_index: number; price: string };
 export type DeleteNpcRequest = { moderator_id: string; npc_id: string };
 
 export type AdminAck = { result: AdminResult };
 
 export type LookupRequest = { moderator_id: string };
 export type ListMerchantTemplatesResponse = { result: AdminResult; templates: MerchantTemplate[] };
-export type ListItemCatalogResponse = { result: AdminResult; items: ItemCatalogEntry[] };
+export type ListItemCatalogResponse = {
+  result: AdminResult;
+  items: ItemCatalogEntry[];
+  catalog_version: string;
+  icon_pack_version: string;
+};
 export type ListMapZonesResponse = { result: AdminResult; zones: MapZone[] };
 export type ListItemPricesResponse = { result: AdminResult; prices: ItemPrice[] };
 

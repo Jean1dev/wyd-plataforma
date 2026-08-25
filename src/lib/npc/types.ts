@@ -50,16 +50,15 @@ export type MerchantTemplate = {
   merchant: number;
 };
 
-// One row of Release/Common/ItemList.csv. Fields beyond name are the *visual*
-// key: the game client draws an item from (mesh, texture, nPos), never from
-// item_index, so an icon pack is keyed by icon_key. See docs/item-icons.md.
+// One catalog row. icon_key comes from itemicon.bin and is opaque; icon_url is
+// the manifest-approved public URL and must be used verbatim.
 // Both ItemCatalogService.ListItems and NpcAdminService.ListItemCatalog return
 // this same message (shared mapper server-side), so they cannot diverge.
 export type ItemCatalogEntry = {
   item_index: number;
   /** Raw catalog name, e.g. "Botas_Douradas(N)". Use for matching, not display. */
   name: string;
-  /** Icon-pack key, "m<mesh>_t<texture>_p<slot_mask>". Opaque — never parse it. */
+  /** Opaque itemicon.bin key (currently "iNNNN"). Never parse it. */
   icon_key: string;
   /** `name` with underscores turned back into spaces. This is what you show. */
   display_name: string;
@@ -71,6 +70,8 @@ export type ItemCatalogEntry = {
   grade: number;
   mesh: number;
   texture: number;
+  /** Public HTTPS URL returned by storage-manager. Empty means fallback. */
+  icon_url: string;
 };
 
 export type MapZone = {
@@ -82,7 +83,9 @@ export type MapZone = {
 // override — the game catalog's base price applies.
 export type ItemPrice = {
   item_index: number;
-  price: number;
+  // int64 fields surface as decimal strings because proto-loader uses
+  // longs: String. Keeping the string avoids precision loss in JavaScript.
+  price: string;
 };
 
 export type DropItemMob = {
