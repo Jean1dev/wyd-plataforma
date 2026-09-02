@@ -88,7 +88,7 @@ export const NEWS = [
   { date: "20 jun", title: "Correção de balanceamento das classes" },
 ];
 
-export const CLIENT_DOWNLOAD_URL = "https://transfer.it/t/aWLiD0sHgbIL";
+export const CLIENT_DOWNLOAD_URL = "https://transfer.it/t/eXyzf10lwTYA";
 
 export const ACCESS_COMMAND =
   "netsh interface portproxy add v4tov4 listenaddress=127.0.0.1 listenport=8281 connectaddress=66.33.22.224 connectport=56950";
