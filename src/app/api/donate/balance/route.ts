@@ -11,7 +11,7 @@ export async function GET() {
 
   try {
     const resp = await donateShopRpc("GetBalance", { account_id: session.accountId });
-    return NextResponse.json({ balance: resp.balance ?? "0" });
+    return NextResponse.json({ balance: String(resp.balance ?? 0) });
   } catch {
     return upstreamError();
   }

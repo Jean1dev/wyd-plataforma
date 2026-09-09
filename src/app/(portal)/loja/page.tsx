@@ -13,7 +13,7 @@ async function loadShop(): Promise<ShopLoadState> {
       donateShopRpc("ListShopItems", {}),
       donateShopRpc("GetBalance", { account_id: session.accountId }),
     ]);
-    return { status: "ok", items: shop.items ?? [], balance: balance.balance ?? "0" };
+    return { status: "ok", items: shop.items ?? [], balance: String(balance.balance ?? 0) };
   } catch {
     return { status: "unavailable", items: [], balance: "0" };
   }

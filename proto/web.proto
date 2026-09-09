@@ -1,28 +1,57 @@
 syntax = "proto3";
 
+// web-api contract — DESIGNED FROM SCRATCH (web-platform-plan.md). This is the
+// edge the Next.js BFF (Route Handlers / Server Actions) calls server-side over
+// gRPC + mTLS; the browser never speaks gRPC. It is SEPARATE from the legacy
+// CPSock game login and from dbServer's AccountService (api/db/v1), which
+// mirrors the legacy G↔DB messages. web-api reuses the same `account` table and
+// argon2id hashing underneath, but exposes its own web-facing surface.
+//
+// Generate with `make proto` (protoc + protoc-gen-go/-grpc).
 package web.v1;
 
+option go_package = "github.com/jeanluca/w2pp-openwyd/api/web/v1;webv1";
+
+// AccountWebService owns the web platform's account flows (sign-up, credential
+// check for the BFF session cookie). Game state is never written here — that
+// stays in tmServer's single-owner loop (web-platform-plan.md).
 service AccountWebService {
+  // CreateAccount registers a new web/game account (argon2id-hashed password).
   rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse);
+  // VerifyCredentials validates name + password so the BFF can mint a session
+  // cookie. It is the web login path, independent of the CPSock game login.
   rpc VerifyCredentials(VerifyCredentialsRequest) returns (VerifyCredentialsResponse);
 }
 
+// RankingWebService exposes public ranking projections for the web front-end.
+// It reads persisted character state from Postgres; the browser calls the
+// Next.js BFF, and the BFF calls this service over gRPC + mTLS.
+service RankingWebService {
+  // ListExpRanking returns the Top EXP character ranking.
+  rpc ListExpRanking(ListExpRankingRequest) returns (ListExpRankingResponse);
+  // ListDuelRanking returns the 1v1 duel win/loss leaderboard (issue #118).
+  rpc ListDuelRanking(ListDuelRankingRequest) returns (ListDuelRankingResponse);
+}
+
+// CreateResult is the outcome of a sign-up. Business outcomes (name taken,
+// invalid input) are carried here, not as gRPC error codes — only infra
+// failures surface as errors.
 enum CreateResult {
   CREATE_RESULT_UNSPECIFIED = 0;
-  CREATE_RESULT_OK = 1;
-  CREATE_RESULT_NAME_TAKEN = 2;
-  CREATE_RESULT_INVALID = 3;
+  CREATE_RESULT_OK = 1;          // account created; account_id is set
+  CREATE_RESULT_NAME_TAKEN = 2;  // canonical name already exists
+  CREATE_RESULT_INVALID = 3;     // name/password/email failed validation
 }
 
 message CreateAccountRequest {
-  string name = 1;
-  string password = 2;
-  string email = 3;
+  string name = 1;     // canonicalized to lowercase server-side
+  string password = 2; // plaintext over the mTLS link; hashed before storage
+  string email = 3;    // optional
 }
 
 message CreateAccountResponse {
   CreateResult result = 1;
-  int64 account_id = 2;
+  int64 account_id = 2; // set only when result is CREATE_RESULT_OK
 }
 
 message VerifyCredentialsRequest {
@@ -31,16 +60,14 @@ message VerifyCredentialsRequest {
 }
 
 message VerifyCredentialsResponse {
-  bool ok = 1;
-  int64 account_id = 2;
-  bool blocked = 3;
-  // Account role: "player", "moderator" or "admin". Used by the BFF to gate the
-  // moderation UI. The web-api remains the authority on authorization.
+  bool ok = 1;          // name exists and password matches
+  int64 account_id = 2; // set only when ok
+  bool blocked = 3;     // account.is_blocked — caller decides how to surface it
+  // role is account.role ('player'/'moderator'/'admin'). The BFF stores it in the
+  // session to gate the moderator UI (page visibility only). It is NOT the
+  // authorization decision — NpcAdminService re-checks the role server-side on
+  // every call, so a tampered session flag still gets ADMIN_RESULT_FORBIDDEN.
   string role = 4;
-}
-
-service RankingWebService {
-  rpc ListExpRanking(ListExpRankingRequest) returns (ListExpRankingResponse);
 }
 
 message ListExpRankingRequest {
@@ -64,17 +91,41 @@ message ListExpRankingResponse {
   int32 total_count = 2;
 }
 
-// CharacterWebService exposes read-only character summaries for the logged-in
-// account. Live state remains owned by tmServer; this API reads persisted data.
+message ListDuelRankingRequest {
+  int32 limit = 1;  // default 50, max 100
+  int32 offset = 2; // negative values are treated as 0
+}
+
+message DuelRankingEntry {
+  int32 rank = 1; // 1-based rank in the full ordered list
+  string name = 2;
+  int32 class = 3;
+  int32 clan = 4;
+  uint32 guild_id = 5;
+  int32 wins = 6;
+  int32 losses = 7;
+}
+
+message ListDuelRankingResponse {
+  repeated DuelRankingEntry entries = 1;
+  int32 total_count = 2;
+}
+
+// CharacterWebService exposes player-facing, read-only character summaries for
+// the Next.js BFF. The BFF must pass the account_id from its httpOnly session;
+// the browser must never provide account_id directly.
 service CharacterWebService {
+  // ListMyCharacters returns the character-selection projection for the logged
+  // account. It is cold-storage data and can be slightly stale while a character
+  // is online; live state remains owned by tmServer's single goroutine.
   rpc ListMyCharacters(ListMyCharactersRequest) returns (ListMyCharactersResponse);
 }
 
 message ListMyCharactersRequest {
-  int64 account_id = 1;
+  int64 account_id = 1; // from the BFF session, never from browser input
 }
 
-message CharacterSummary {
+message WebCharacterSummary {
   int32 slot = 1;
   string name = 2;
   int32 class = 3;
@@ -85,14 +136,14 @@ message CharacterSummary {
   int32 hp = 8;
   int32 max_mp = 9;
   int32 mp = 10;
-  int32 strength = 11;
-  int32 intelligence = 12;
-  int32 dexterity = 13;
-  int32 constitution = 14;
+  int32 str = 11;
+  int32 int = 12;
+  int32 dex = 13;
+  int32 con = 14;
 }
 
 message ListMyCharactersResponse {
-  repeated CharacterSummary characters = 1;
+  repeated WebCharacterSummary characters = 1;
 }
 
 // ItemCatalogService exposes the item catalog read-only to the player-facing
@@ -115,79 +166,101 @@ message ListItemsResponse {
   // catalog_version fingerprints ItemList.csv; it only changes on redeploy, so
   // the BFF can cache the list indefinitely and revalidate on this value.
   string catalog_version = 2;
-  // Fingerprint of the published icon manifest/URL map. Empty means fallback.
+  // icon_pack_version fingerprints itemicon.bin and its numbered atlases. It
+  // is the immutable CDN path segment; empty means fallback-only mode.
   string icon_pack_version = 3;
 }
 
-// NpcAdminService lets moderators edit the cold NPC config (visibility,
-// position and shop/price). The web-api is the authority on authorization and
-// validation. Business outcomes travel in the body via AdminResult; only
-// infrastructure failures become gRPC errors.
+// NpcAdminService is the moderator-facing NPC editing surface (npc-editing-plan.md).
+// The Next.js BFF calls it server-side after establishing a moderator session;
+// every request carries the moderator's account_id, which the web-api authorizes
+// against account.role ('moderator'/'admin') and records in the audit trail. All
+// writes are cold config in Postgres — never live game state, which stays in
+// tmServer's single-owner loop.
 service NpcAdminService {
+  // ListNpcs returns every NPC definition (moderation table).
   rpc ListNpcs(ListNpcsRequest) returns (ListNpcsResponse);
+  // GetNpc returns one definition with its shop stock.
   rpc GetNpc(GetNpcRequest) returns (GetNpcResponse);
+  // UpsertNpc creates or updates a definition (position, visibility, merchant type).
   rpc UpsertNpc(UpsertNpcRequest) returns (UpsertNpcResponse);
+  // SetNpcVisibility toggles whether the NPC appears ("aparece ou não").
   rpc SetNpcVisibility(SetNpcVisibilityRequest) returns (AdminAck);
+  // SetNpcShop replaces a merchant NPC's shop stock.
   rpc SetNpcShop(SetNpcShopRequest) returns (AdminAck);
+  // SetItemPrice sets (price>=0) or clears (price<0) the GLOBAL price of an item.
   rpc SetItemPrice(SetItemPriceRequest) returns (AdminAck);
+  // DeleteNpc removes a definition.
   rpc DeleteNpc(DeleteNpcRequest) returns (AdminAck);
-
-  // Read-only lookups that back the moderation form's pickers, so moderators
-  // choose from valid values instead of typing raw ids. Each is scanned once at
-  // web-api boot (no per-request disk read). An empty list is a valid response
-  // (web-api started without -content) — the UI falls back to a manual field.
+  // ListMerchantTemplates returns the supported NPC templates found in the
+  // content tree (Release/TMsrv/run/npc/), so the moderator UI can offer a
+  // searchable picker instead of a free-text template_name field. Scanned once
+  // at web-api boot from -content/W2PP_CONTENT; empty when that flag is unset.
   rpc ListMerchantTemplates(ListMerchantTemplatesRequest) returns (ListMerchantTemplatesResponse);
+  // ListItemCatalog returns the item catalog (Release/Common/ItemList.csv:
+  // item_index, name), so the shop-item editor (SetNpcShop/SetItemPrice) can
+  // offer a searchable picker instead of a raw item_index typed by hand.
+  // Scanned once at web-api boot from -content/W2PP_CONTENT; empty when unset.
   rpc ListItemCatalog(ListItemCatalogRequest) returns (ListItemCatalogResponse);
-  rpc ListMapZones(ListMapZonesRequest) returns (ListMapZonesResponse);
-  rpc ListItemPrices(ListItemPricesRequest) returns (ListItemPricesResponse);
-
-  // Read-only DropTool lookups. The web-api scans the content catalog at boot;
-  // empty lists are valid when it started without -content/W2PP_CONTENT.
+  // ListDropItems returns the DropTool-style item-centric report from the
+  // content tree: item -> mobs/slots that can drop it. This is read-only
+  // content metadata; the tmServer runtime still owns actual drop rolls.
   rpc ListDropItems(ListDropItemsRequest) returns (ListDropItemsResponse);
+  // ListMobDrops returns the DropTool-style mob-centric report from the
+  // content tree: mob template -> Carry[] drop slots.
   rpc ListMobDrops(ListMobDropsRequest) returns (ListMobDropsResponse);
+  // ListItemPrices returns every global item price override currently set
+  // (item_price table). An item absent from the list has no override — it
+  // uses the content catalog's base price.
+  rpc ListItemPrices(ListItemPricesRequest) returns (ListItemPricesResponse);
+  // ListMapZones returns the fixed city-zone table (label only: the world runs
+  // a single grid, so map_id has no gameplay effect today) for the NPC form's
+  // map picker instead of a raw map_id typed by hand.
+  rpc ListMapZones(ListMapZonesRequest) returns (ListMapZonesResponse);
 }
 
+// AdminResult carries the business outcome of an admin write (authorization,
+// validation, missing target) in the body — only infra failures become gRPC errors.
 enum AdminResult {
   ADMIN_RESULT_UNSPECIFIED = 0;
   ADMIN_RESULT_OK = 1;
-  ADMIN_RESULT_FORBIDDEN = 2;
-  ADMIN_RESULT_INVALID = 3;
-  ADMIN_RESULT_NOT_FOUND = 4;
-  // DeleteNpc on a content-owned NPC (origin = "content"). Not an error: the
-  // supported action is SetNpcVisibility(enabled=false). ~99% of the seeded
-  // base is content-owned, so this is an expected outcome, not a corner case.
-  ADMIN_RESULT_CONTENT_OWNED = 5;
+  ADMIN_RESULT_FORBIDDEN = 2;  // caller is not a moderator/admin
+  ADMIN_RESULT_INVALID = 3;    // validation failed (bad slot, unknown target, …)
+  ADMIN_RESULT_NOT_FOUND = 4;  // target definition does not exist
+  ADMIN_RESULT_CONTENT_OWNED = 5; // content definitions must be hidden, not deleted
+}
+
+message AdminAck { AdminResult result = 1; }
+
+// AdminNpcShopItem mirrors the DB shop slot; price is global, not per-slot.
+message AdminNpcShopItem {
+  int32 slot = 1;
+  int32 item_index = 2;
+  int32 eff1 = 3;  int32 effv1 = 4;
+  int32 eff2 = 5;  int32 effv2 = 6;
+  int32 eff3 = 7;  int32 effv3 = 8;
+  // quantity is the stack amount sold by this slot. 0 is accepted as 1 for
+  // older callers; values >1 are materialized as EF_AMOUNT in the legacy item.
+  int32 quantity = 9;
 }
 
 message AdminNpc {
-  int64  id            = 1;  // numeric id of the definition (use in npc_id)
-  string slug          = 2;  // stable human key (e.g. "Karkarian-42")
-  string template_name = 3;  // template file under Release/TMsrv/run/npc/
-  string display_name  = 4;
-  bool   enabled       = 5;  // "shows up or not"
-  int32  map_id        = 6;  // loaded, but the game positions only by x/y
-  int32  pos_x         = 7;  // spawn point
-  int32  pos_y         = 8;
-  int32  route_type    = 9;  // 0 = idle
-  int32  merchant      = 10; // 0 non-merchant, 1 shop, 2 storage, 19 shop3, 100 quest
-  repeated AdminNpcShopItem shop = 11; // filled in GetNpc/ListNpcs
-  string origin          = 12; // "content" (from NPCGener.txt) | "custom" (moderator-created)
-  int32  generator_index = 13; // source line in NPCGener.txt; -1 when not applicable
+  int64 id = 1;
+  string slug = 2;
+  string template_name = 3;
+  string display_name = 4;
+  bool enabled = 5;
+  int32 map_id = 6;
+  int32 pos_x = 7;
+  int32 pos_y = 8;
+  int32 route_type = 9;
+  int32 merchant = 10;
+  repeated AdminNpcShopItem shop = 11;
+  string origin = 12;
+  int32 generator_index = 13;
 }
 
-message AdminNpcShopItem {
-  int32 slot       = 1;  // shop display slot 0..26 (3 tabs of 9)
-  int32 item_index = 2;  // index in ItemList (> 0)
-  int32 eff1 = 3; int32 effv1 = 4;  // optional effects (0 = none)
-  int32 eff2 = 5; int32 effv2 = 6;
-  int32 eff3 = 7; int32 effv3 = 8;
-  int32 quantity = 9;  // quantity sold in the slot; 0/absent becomes 1
-}
-
-message ListNpcsRequest {
-  int64 moderator_id = 1;
-}
-
+message ListNpcsRequest { int64 moderator_id = 1; }
 message ListNpcsResponse {
   AdminResult result = 1;
   repeated AdminNpc npcs = 2;
@@ -197,25 +270,25 @@ message GetNpcRequest {
   int64 moderator_id = 1;
   int64 npc_id = 2;
 }
-
 message GetNpcResponse {
   AdminResult result = 1;
   AdminNpc npc = 2;
 }
 
 message UpsertNpcRequest {
-  int64  moderator_id = 1;
-  string slug         = 2;
+  int64 moderator_id = 1;
+  // id is ignored on create; the slug is the stable key. Position/visibility/
+  // merchant fields are applied as given.
+  string slug = 2;
   string template_name = 3;
   string display_name = 4;
-  bool   enabled      = 5;
-  int32  map_id       = 6;
-  int32  pos_x        = 7;
-  int32  pos_y        = 8;
-  int32  route_type   = 9;
-  int32  merchant     = 10;
+  bool enabled = 5;
+  int32 map_id = 6;
+  int32 pos_x = 7;
+  int32 pos_y = 8;
+  int32 route_type = 9;
+  int32 merchant = 10;
 }
-
 message UpsertNpcResponse {
   AdminResult result = 1;
   int64 npc_id = 2;
@@ -224,7 +297,7 @@ message UpsertNpcResponse {
 message SetNpcVisibilityRequest {
   int64 moderator_id = 1;
   int64 npc_id = 2;
-  bool  enabled = 3;
+  bool enabled = 3;
 }
 
 message SetNpcShopRequest {
@@ -236,7 +309,7 @@ message SetNpcShopRequest {
 message SetItemPriceRequest {
   int64 moderator_id = 1;
   int32 item_index = 2;
-  int64 price = 3;  // >= 0 sets the global price; < 0 clears the override
+  int64 price = 3; // < 0 clears the override
 }
 
 message DeleteNpcRequest {
@@ -244,50 +317,14 @@ message DeleteNpcRequest {
   int64 npc_id = 2;
 }
 
-message AdminAck {
-  AdminResult result = 1;
-}
-
-service WorldEventAdminService {
-  rpc GetWorldEventConfig(GetWorldEventConfigRequest) returns (GetWorldEventConfigResponse);
-  rpc SetWorldEventConfig(SetWorldEventConfigRequest) returns (AdminAck);
-}
-
-message WorldEventConfig {
-  bool enabled = 1;
-  int32 item_index = 2;
-  int32 rate = 3;
-  int32 start_index = 4;
-  int32 current_index = 5;
-  int32 end_index = 6;
-  bool indexed = 7;
-  bool notice_enabled = 8;
-  bool double_exp_enabled = 9;
-  bool newbie_event_enabled = 10;
-}
-
-message GetWorldEventConfigRequest {
-  int64 moderator_id = 1;
-}
-
-message GetWorldEventConfigResponse {
-  AdminResult result = 1;
-  int64 version = 2;
-  WorldEventConfig config = 3;
-}
-
-message SetWorldEventConfigRequest {
-  int64 moderator_id = 1;
-  WorldEventConfig config = 2;
-}
-
-// A merchant template found under Release/TMsrv/run/npc/ (merchant != 0).
-// Backs the template_name combobox. An empty templates list is valid.
+// MerchantTemplate is one supported STRUCT_MOB template found under
+// Release/TMsrv/run/npc/.
 message MerchantTemplate {
-  string template_name = 1;  // exact value for UpsertNpc.template_name (no .txt)
-  string display_name  = 2;  // template mob.Name, for display
-  int32  merchant      = 3;  // see merchant semantics (1, 2, 19, 100…)
+  string template_name = 1; // exact value for UpsertNpc.template_name (no .txt)
+  string display_name = 2;  // the template's mob.Name, for the picker UI
+  int32 merchant = 3;       // CurrentScore.Merchant (1, 2, 19, 100, …)
 }
+
 message ListMerchantTemplatesRequest { int64 moderator_id = 1; }
 message ListMerchantTemplatesResponse {
   AdminResult result = 1;
@@ -298,20 +335,22 @@ message ListMerchantTemplatesResponse {
 // the shop-item picker and the item icons need (the full row also carries
 // price/effects, not relevant here — see tmserver/internal/content.ItemEntry).
 //
-// icon_key is the opaque itemicon.bin identifier. storage-manager resolves it
-// through the published manifest and returns the approved public URL.
+// The classic client resolves the image through itemicon.bin, a direct mapping
+// from item_index to a 35x35 cell in UI/itemiconNN.wyt. mesh/texture/slot remain
+// useful fallback metadata but do not identify the image.
 message ItemCatalogEntry {
   int32 item_index = 1;
   string name = 2;          // raw catalog name, e.g. "Botas_Douradas(N)"
-  string icon_key = 3;      // opaque itemicon.bin key; never parse it
+  string icon_key = 3;      // generated atlas-cell key "iNNNN"; empty = fallback
   string display_name = 4;  // name with underscores turned back into spaces
   int32 slot_mask = 5;      // nPos: bitmask over STRUCT_MOB.Equip[16]; 0 = not equippable
   repeated string slots = 6; // slot_mask decoded ("boots", "weapon", …)
   int32 grade = 7;          // 1=Normal 2=Místico 3=Arcano 4=Lendário …
   int32 mesh = 8;           // IndexMesh: model/appearance
   int32 texture = 9;        // IndexTexture: colour variant of that model
-  string icon_url = 10;     // manifest-approved public HTTPS URL; empty = fallback
+  string icon_url = 10;     // public storage-manager URL; empty = fallback
 }
+
 message ListItemCatalogRequest { int64 moderator_id = 1; }
 message ListItemCatalogResponse {
   AdminResult result = 1;
@@ -320,41 +359,12 @@ message ListItemCatalogResponse {
   string icon_pack_version = 4;
 }
 
-// One of the 5 fixed city zones. Label-only: map_id has no game effect today
-// (single-grid world). Never empty.
-message MapZone {
-  int32 id = 1;
-  string name = 2;
-}
-message ListMapZonesRequest { int64 moderator_id = 1; }
-message ListMapZonesResponse {
-  AdminResult result = 1;
-  repeated MapZone zones = 2;
-}
-
-// Global price override (table item_price). Item absent from this list = no
-// override, the game catalog's base price applies.
-message ItemPrice {
-  int32 item_index = 1;
-  int64 price = 2;
-}
-message ListItemPricesRequest { int64 moderator_id = 1; }
-message ListItemPricesResponse {
-  AdminResult result = 1;
-  repeated ItemPrice prices = 2;
-}
-
-message ListDropItemsRequest {
-  int64 moderator_id = 1;
-  int32 item_index = 2;             // 0 = no exact filter
-  string item_query = 3;            // substring in item name or index
-  string mob_query = 4;             // substring in mob name/template
-  bool include_zero_drop_items = 5; // include catalog items without mobs
-}
-
-message ListDropItemsResponse {
-  AdminResult result = 1;
-  repeated DropItemEntry items = 2;
+message DropItemMob {
+  string template_name = 1; // Release/TMsrv/run/npc file name
+  string mob_name = 2;      // STRUCT_MOB.Name decoded as Latin-1
+  int32 mob_level = 3;      // STRUCT_MOB.CurrentScore.Level
+  int32 slot = 4;           // Carry[] slot; controls the base drop divisor
+  int32 rate_divisor = 5;   // g_pDropRate[slot]; larger means rarer
 }
 
 message DropItemEntry {
@@ -363,19 +373,38 @@ message DropItemEntry {
   repeated DropItemMob mobs = 3;
 }
 
-message DropItemMob {
-  string template_name = 1;
-  string mob_name = 2;
-  int32 mob_level = 3;
-  int32 slot = 4;
-  int32 rate_divisor = 5;
+message ListDropItemsRequest {
+  int64 moderator_id = 1;
+  int32 item_index = 2;               // 0 = no exact item filter
+  string item_query = 3;              // substring match on item name or index
+  string mob_query = 4;               // substring match on mob/template name
+  bool include_zero_drop_items = 5;   // include catalog items with no matching mobs
+}
+
+message ListDropItemsResponse {
+  AdminResult result = 1;
+  repeated DropItemEntry items = 2;
+}
+
+message MobDropItem {
+  int32 slot = 1;          // Carry[] slot; controls the base drop divisor
+  int32 item_index = 2;
+  string item_name = 3;
+  int32 rate_divisor = 4;  // g_pDropRate[slot]; larger means rarer
+}
+
+message MobDropEntry {
+  string template_name = 1; // Release/TMsrv/run/npc file name
+  string mob_name = 2;      // STRUCT_MOB.Name decoded as Latin-1
+  int32 mob_level = 3;      // STRUCT_MOB.CurrentScore.Level
+  repeated MobDropItem items = 4;
 }
 
 message ListMobDropsRequest {
   int64 moderator_id = 1;
-  string mob_query = 2;  // substring in mob name/template
-  int32 item_index = 3;  // 0 = no exact filter
-  string item_query = 4; // substring in item name or index
+  string mob_query = 2;   // substring match on mob/template name
+  int32 item_index = 3;   // 0 = no exact item filter
+  string item_query = 4;  // substring match on item name or index
 }
 
 message ListMobDropsResponse {
@@ -383,121 +412,144 @@ message ListMobDropsResponse {
   repeated MobDropEntry mobs = 2;
 }
 
-message MobDropEntry {
-  string template_name = 1;
-  string mob_name = 2;
-  int32 mob_level = 3;
-  repeated MobDropItem items = 4;
+// ItemPrice is a global per-item price override (item_price table); an item
+// absent from ListItemPrices uses the content catalog's base price.
+message ItemPrice {
+  int32 item_index = 1;
+  int64 price = 2;
 }
 
-message MobDropItem {
-  int32 slot = 1;
-  int32 item_index = 2;
-  string item_name = 3;
-  int32 rate_divisor = 4;
+message ListItemPricesRequest { int64 moderator_id = 1; }
+message ListItemPricesResponse {
+  AdminResult result = 1;
+  repeated ItemPrice prices = 2;
 }
 
-// MobTemplateAdminService lets moderators edit combat stats (level, HP/MP,
-// attributes, EXP, skills, equipment) of npc/<template_name> template files —
-// everything EXCEPT shop stock (NpcAdminService.SetNpcShop) and the
-// DB-managed spawn position (NpcAdminService.UpsertNpc). Mirrors the legacy
-// Win32 EDITAPPMOB tool. tmServer only applies overrides at boot
-// (-mob-stat-editing flag) — there is no hot reload.
+// MapZone is one of the fixed city zones (tmserver/internal/world/city.go's
+// cities table). Label only, for the map_id picker — the world runs a single
+// grid, so map_id itself has no gameplay effect today.
+message MapZone {
+  int32 id = 1;
+  string name = 2;
+}
+
+message ListMapZonesRequest { int64 moderator_id = 1; }
+message ListMapZonesResponse {
+  AdminResult result = 1;
+  repeated MapZone zones = 2;
+}
+
+// MobTemplateAdminService is the moderator-facing mob/NPC template STAT editing
+// surface (mob-template-editing-plan.md) — the equivalent-tool successor to the
+// legacy Win32 EDITAPPMOB. It is the sibling of NpcAdminService: that service
+// edits spawn position/visibility/shop for the DB-managed merchant subset; this
+// one edits the combat/attribute stats (Level/HP/MP/attributes/EXP/skills/
+// equip) of ANY npc/<template_name> file, monsters included. Same conventions:
+// every request carries moderator_id, re-authorized server-side against
+// account.role, and all writes are cold config in Postgres — the tmServer only
+// ever reads it, once at boot (no hot-reload for this feature, matching
+// EDITAPPMOB's own restart-to-apply behavior).
 service MobTemplateAdminService {
+  // ListMobTemplates returns every STRUCT_MOB template file found in the
+  // content tree (Release/TMsrv/run/npc/) — unlike NpcAdminService's
+  // ListMerchantTemplates, this is NOT filtered to merchants: monsters are the
+  // primary rebalancing use case for this tool.
   rpc ListMobTemplates(ListMobTemplatesRequest) returns (ListMobTemplatesResponse);
+  // GetMobTemplateStat returns the stat override for a template if one exists;
+  // otherwise it reads the raw template file's current values (read-through),
+  // so opening the editor for an untouched template shows real starting
+  // values instead of zeros.
   rpc GetMobTemplateStat(GetMobTemplateStatRequest) returns (GetMobTemplateStatResponse);
-  rpc UpsertMobTemplateStat(UpsertMobTemplateStatRequest) returns (AdminAck);
+  // UpsertMobTemplateStat creates or replaces the full stat override for a
+  // template_name.
+  rpc UpsertMobTemplateStat(UpsertMobTemplateStatRequest) returns (UpsertMobTemplateStatResponse);
+  // SetMobTemplateEquip replaces a template's Equip[] slot overrides. Requires
+  // a stat override to already exist for template_name (same dependency as
+  // NpcAdminService.SetNpcShop on the NPC definition existing).
   rpc SetMobTemplateEquip(SetMobTemplateEquipRequest) returns (AdminAck);
+  // DeleteMobTemplateStat removes the override, reverting the template to its
+  // raw file defaults (never deletes the underlying file — Release/ is
+  // read-only in production).
   rpc DeleteMobTemplateStat(DeleteMobTemplateStatRequest) returns (AdminAck);
 }
 
-// Every file under Release/TMsrv/run/npc/, NOT filtered by merchant type
-// (unlike ListMerchantTemplates). Backs the template_name picker. Empty list
-// is valid (web-api without -content/W2PP_CONTENT).
+// MobTemplateFile is one STRUCT_MOB template found under Release/TMsrv/run/npc/,
+// unfiltered (see ListMobTemplates).
 message MobTemplateFile {
-  string template_name = 1; // exact filename under npc/, the key
-  string display_name  = 2; // template mob.Name, display-only
-  int32  merchant       = 3; // raw CurrentScore.Merchant, informational only
+  string template_name = 1; // exact value for Upsert/GetMobTemplateStat.template_name
+  string display_name = 2;  // the template's mob.Name, for the picker UI
+  int32 merchant = 3;       // CurrentScore.Merchant, informational
 }
+
 message ListMobTemplatesRequest { int64 moderator_id = 1; }
 message ListMobTemplatesResponse {
   AdminResult result = 1;
   repeated MobTemplateFile templates = 2;
 }
 
-// One of Equip[16] (MAX_EQUIP) on the mob template.
+// AdminMobTemplateEquipItem is one Equip[] slot override (0..15, MAX_EQUIP).
 message AdminMobTemplateEquipItem {
-  int32 slot       = 1; // 0-15, no duplicates
-  int32 item_index = 2; // must be > 0
-  int32 eff1 = 3; int32 effv1 = 4; // 0 = no effect
-  int32 eff2 = 5; int32 effv2 = 6;
-  int32 eff3 = 7; int32 effv3 = 8;
+  int32 slot = 1;
+  int32 item_index = 2;
+  int32 eff1 = 3;  int32 effv1 = 4;
+  int32 eff2 = 5;  int32 effv2 = 6;
+  int32 eff3 = 7;  int32 effv3 = 8;
 }
 
-// Full combat-stat form. Returned whole by GetMobTemplateStat, written whole
-// by UpsertMobTemplateStat (full replace, not partial). equip is read here
-// but written only via SetMobTemplateEquip.
+// AdminMobTemplateStat is the full moderator-editable field surface of a mob
+// template — the fields the legacy EDITAPPMOB edited, minus Carry[] (already
+// AdminNpcShopItem) and DB-managed spawn position (already AdminNpc).
+// BaseScore/CurrentScore are not modeled separately: tmServer mirrors the same
+// value into both, matching EDITAPPMOB's own `CurrentScore = BaseScore` on
+// save.
 message AdminMobTemplateStat {
   string template_name = 1;
-  bool   overridden    = 2; // GetMobTemplateStat only; false = read-through from raw file, normal state
-
-  // Identidade
-  string display_name = 3;
-  int32  clan          = 4;
-  int32  merchant       = 5; // raw STRUCT_MOB.Merchant — distinct from AdminNpc.merchant, label separately in UI
-  int32  class          = 6;
-
-  // Economia
+  // overridden is false when this is a read-through of the raw template
+  // file's current values (no saved override yet) — GetMobTemplateStat only.
+  bool overridden = 2;
+  string display_name = 3;  // "" keeps the template file's own name
+  int32 clan = 4;
+  int32 merchant = 5;  // STRUCT_MOB top-level Merchant — distinct from AdminNpc.merchant
+  int32 class = 6;
   int32 coin = 7;
-  int64 exp  = 8; // warn client-side if 0 or >10,000,000 when level>=1 && merchant==0
-
-  // Posição (template-embedded; NOT npc_definition pos_x/pos_y)
+  int64 exp = 8;
   int32 spx = 9;
   int32 spy = 10;
-
-  // Combate
-  int32 level      = 11;
-  int32 ac         = 12;
-  int32 damage     = 13;
+  int32 level = 11;
+  int32 ac = 12;
+  int32 damage = 13;
   int32 chaos_rate = 14;
   int32 attack_run = 15;
-  int32 direction  = 16; // 0-7
-
-  // Atributos
-  int32 str      = 17;
-  int32 intel    = 18; // "int" is reserved
-  int32 dex      = 19;
-  int32 con      = 20;
+  int32 direction = 16;
+  int32 str = 17;
+  int32 intel = 18;  // "int" avoided (reserved in several target languages)
+  int32 dex = 19;
+  int32 con = 20;
   int32 special1 = 21;
   int32 special2 = 22;
   int32 special3 = 23;
   int32 special4 = 24;
-
-  // Combate (vida)
   int32 max_hp = 25;
-  int32 hp     = 26;
+  int32 hp = 26;
   int32 max_mp = 27;
-  int32 mp     = 28;
-
-  // Skills
+  int32 mp = 28;
   int32 learned_skill = 29;
-  int32 score_bonus   = 30;
-  int32 skill_bar1    = 31;
-  int32 skill_bar2    = 32;
-  int32 skill_bar3    = 33;
-  int32 skill_bar4    = 34;
-  int32 regen_hp      = 35;
-  int32 regen_mp      = 36;
-  int32 resist1       = 37; // signed, negative valid
-  int32 resist2       = 38;
-  int32 resist3       = 39;
-  int32 resist4       = 40;
-
+  int32 score_bonus = 30;
+  int32 skill_bar1 = 31;
+  int32 skill_bar2 = 32;
+  int32 skill_bar3 = 33;
+  int32 skill_bar4 = 34;
+  int32 regen_hp = 35;
+  int32 regen_mp = 36;
+  int32 resist1 = 37;
+  int32 resist2 = 38;
+  int32 resist3 = 39;
+  int32 resist4 = 40;
   repeated AdminMobTemplateEquipItem equip = 41;
 }
 
 message GetMobTemplateStatRequest {
-  int64  moderator_id  = 1;
+  int64 moderator_id = 1;
   string template_name = 2;
 }
 message GetMobTemplateStatResponse {
@@ -509,20 +561,18 @@ message UpsertMobTemplateStatRequest {
   int64 moderator_id = 1;
   AdminMobTemplateStat stat = 2;
 }
+message UpsertMobTemplateStatResponse {
+  AdminResult result = 1;
+}
 
-// Replaces the whole 16-slot equip list (full replace). Requires an override
-// to already exist (Upsert stats first if overridden==false), else
-// NOT_FOUND. INVALID if slot out of 0-15, item_index<=0, or duplicate slot.
 message SetMobTemplateEquipRequest {
-  int64  moderator_id  = 1;
+  int64 moderator_id = 1;
   string template_name = 2;
   repeated AdminMobTemplateEquipItem items = 3;
 }
 
-// Removes the override; reverts read-through to the raw file. Never touches
-// the npc/ file itself.
 message DeleteMobTemplateStatRequest {
-  int64  moderator_id  = 1;
+  int64 moderator_id = 1;
   string template_name = 2;
 }
 
@@ -617,36 +667,35 @@ message TransformAttributeMapResponse {
   bytes data = 8;      // full transformed 1024x1024 binary
 }
 
-// Donate shop services. The browser never calls these directly; the Next.js
-// BFF derives account_id/moderator_id from the httpOnly session cookie.
+// DonateAdminService is the moderator-facing donate web-shop surface (issue #34):
+// CRUD over the donate_shop_item catalog plus the manual "credit donate to an
+// account" path (the seam the future payment webhook reuses). Like NpcAdminService
+// every request carries the moderator's account_id, re-authorized server-side
+// against account.role; all writes are cold config in Postgres, never live state.
 service DonateAdminService {
+  // ListShopItems returns every offer (enabled or not) — the moderation table.
   rpc ListShopItems(ListShopItemsRequest) returns (ListShopItemsResponse);
+  // UpsertShopItem creates (id==0) or updates an offer.
   rpc UpsertShopItem(UpsertShopItemRequest) returns (UpsertShopItemResponse);
+  // SetShopItemEnabled toggles whether an offer is on sale.
   rpc SetShopItemEnabled(SetShopItemEnabledRequest) returns (AdminAck);
+  // DeleteShopItem removes an offer.
   rpc DeleteShopItem(DeleteShopItemRequest) returns (AdminAck);
+  // CreditDonateBalance adds donate currency to an account's wallet. This is the
+  // "adicionar donate na conta" function; the payment webhook will later call the
+  // same underlying store method after settling a real-money donation.
   rpc CreditDonateBalance(CreditDonateBalanceRequest) returns (CreditDonateBalanceResponse);
 }
 
-service DonateShopService {
-  rpc ListShopItems(ListPublicShopItemsRequest) returns (ListPublicShopItemsResponse);
-  rpc GetBalance(GetDonateBalanceRequest) returns (GetDonateBalanceResponse);
-  rpc Buy(BuyDonateShopItemRequest) returns (BuyDonateShopItemResponse);
-}
-
-enum BuyResult {
-  BUY_RESULT_UNSPECIFIED = 0;
-  BUY_RESULT_OK = 1;
-  BUY_RESULT_INSUFFICIENT_FUNDS = 2;
-  BUY_RESULT_NOT_FOUND = 3;
-  BUY_RESULT_DISABLED = 4;
-}
-
+// DonateShopItem is one purchasable offer: an item (index + up to three
+// effect/value pairs) sold for `price` units of donate currency. expires_days > 0
+// makes the delivered item timed.
 message DonateShopItem {
   int64 id = 1;
   int32 item_index = 2;
-  int32 eff1 = 3; int32 effv1 = 4;
-  int32 eff2 = 5; int32 effv2 = 6;
-  int32 eff3 = 7; int32 effv3 = 8;
+  int32 eff1 = 3;  int32 effv1 = 4;
+  int32 eff2 = 5;  int32 effv2 = 6;
+  int32 eff3 = 7;  int32 effv3 = 8;
   int32 price = 9;
   string title = 10;
   string description = 11;
@@ -654,10 +703,7 @@ message DonateShopItem {
   int32 expires_days = 13;
 }
 
-message ListShopItemsRequest {
-  int64 moderator_id = 1;
-}
-
+message ListShopItemsRequest { int64 moderator_id = 1; }
 message ListShopItemsResponse {
   AdminResult result = 1;
   repeated DonateShopItem items = 2;
@@ -665,9 +711,9 @@ message ListShopItemsResponse {
 
 message UpsertShopItemRequest {
   int64 moderator_id = 1;
+  // id == 0 creates a new offer; otherwise the offer with that id is updated.
   DonateShopItem item = 2;
 }
-
 message UpsertShopItemResponse {
   AdminResult result = 1;
   int64 item_id = 2;
@@ -686,80 +732,93 @@ message DeleteShopItemRequest {
 
 message CreditDonateBalanceRequest {
   int64 moderator_id = 1;
-  int64 account_id = 2;
-  int32 amount = 3;
-  string reason = 4;
+  int64 account_id = 2; // the account being credited
+  int32 amount = 3;     // donate units to add (> 0)
+  string reason = 4;    // free-text note recorded in the audit trail
 }
-
 message CreditDonateBalanceResponse {
   AdminResult result = 1;
-  int64 new_balance = 2;
+  int32 new_balance = 2; // set only when result is OK
 }
 
-message ListPublicShopItemsRequest {}
+// DonateShopService is the player-facing donate shop the Next.js BFF calls with
+// the logged account_id from its httpOnly session (never browser-supplied). It
+// reads the enabled catalog and processes purchases: a purchase debits the
+// account's donate balance and enqueues the item into delivery_queue, which the
+// tmServer drains into the account cargo on the next login (web-platform-plan.md).
+service DonateShopService {
+  // ListShopItems returns the enabled offers (the vitrine).
+  rpc ListShopItems(ListStoreItemsRequest) returns (ListStoreItemsResponse);
+  // GetBalance returns the account's current donate balance.
+  rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse);
+  // Buy purchases an offer for the account.
+  rpc Buy(BuyRequest) returns (BuyResponse);
+}
 
-message ListPublicShopItemsResponse {
+// BuyResult carries the purchase outcome in the body; only infra failures become
+// gRPC errors.
+enum BuyResult {
+  BUY_RESULT_UNSPECIFIED = 0;
+  BUY_RESULT_OK = 1;                 // debited + queued for delivery
+  BUY_RESULT_INSUFFICIENT_FUNDS = 2; // balance < price
+  BUY_RESULT_NOT_FOUND = 3;          // unknown offer or account
+  BUY_RESULT_DISABLED = 4;           // offer exists but is not on sale
+}
+
+message ListStoreItemsRequest {}
+message ListStoreItemsResponse {
   repeated DonateShopItem items = 1;
 }
 
-message GetDonateBalanceRequest {
-  int64 account_id = 1;
+message GetBalanceRequest {
+  int64 account_id = 1; // from the BFF session, never from browser input
+}
+message GetBalanceResponse {
+  int32 balance = 1;
 }
 
-message GetDonateBalanceResponse {
-  int64 balance = 1;
-}
-
-message BuyDonateShopItemRequest {
-  int64 account_id = 1;
+message BuyRequest {
+  int64 account_id = 1;   // from the BFF session, never from browser input
   int64 shop_item_id = 2;
 }
-
-message BuyDonateShopItemResponse {
+message BuyResponse {
   BuyResult result = 1;
-  int64 new_balance = 2;
+  int32 new_balance = 2; // set only when result is OK
 }
 
-// Daily reward services. The browser never calls these directly; the Next.js
-// BFF derives account_id/moderator_id from the httpOnly session cookie. Free,
-// resgatable at most once per account per UTC day; no wallet, no streak.
+// DailyRewardAdminService is the moderator-facing daily-reward catalog surface
+// (issue #35): CRUD over the daily_reward_item catalog. Like DonateAdminService
+// every request carries the moderator's account_id, re-authorized server-side
+// against account.role; all writes are cold config in Postgres, never live
+// state. Unlike DonateAdminService there is no balance-credit RPC — daily
+// rewards are free.
 service DailyRewardAdminService {
+  // ListRewardItems returns every offer (enabled or not) — the moderation table.
   rpc ListRewardItems(ListRewardItemsRequest) returns (ListRewardItemsResponse);
+  // UpsertRewardItem creates (id==0) or updates an offer.
   rpc UpsertRewardItem(UpsertRewardItemRequest) returns (UpsertRewardItemResponse);
+  // SetRewardItemEnabled toggles whether an offer is claimable.
   rpc SetRewardItemEnabled(SetRewardItemEnabledRequest) returns (AdminAck);
+  // DeleteRewardItem removes an offer.
   rpc DeleteRewardItem(DeleteRewardItemRequest) returns (AdminAck);
 }
 
-service DailyRewardService {
-  rpc ListRewards(ListRewardsRequest) returns (ListRewardsResponse);
-  rpc GetClaimStatus(GetClaimStatusRequest) returns (GetClaimStatusResponse);
-  rpc Claim(ClaimRewardRequest) returns (ClaimRewardResponse);
-}
-
-enum ClaimResult {
-  CLAIM_RESULT_UNSPECIFIED = 0;
-  CLAIM_RESULT_OK = 1;
-  CLAIM_RESULT_ALREADY_CLAIMED = 2;
-  CLAIM_RESULT_NOT_FOUND = 3;
-  CLAIM_RESULT_DISABLED = 4;
-}
-
+// DailyRewardItem is one claimable offer: an item (index + up to three
+// effect/value pairs), free, gated only by the once-per-account-per-UTC-day
+// limit. expires_days > 0 makes the delivered item timed.
 message DailyRewardItem {
   int64 id = 1;
   int32 item_index = 2;
-  int32 eff1 = 3; int32 effv1 = 4;
-  int32 eff2 = 5; int32 effv2 = 6;
-  int32 eff3 = 7; int32 effv3 = 8;
+  int32 eff1 = 3;  int32 effv1 = 4;
+  int32 eff2 = 5;  int32 effv2 = 6;
+  int32 eff3 = 7;  int32 effv3 = 8;
   string title = 9;
   string description = 10;
   bool enabled = 11;
   int32 expires_days = 12;
 }
 
-message ListRewardItemsRequest {
-  int64 moderator_id = 1;
-}
-
+message ListRewardItemsRequest { int64 moderator_id = 1; }
 message ListRewardItemsResponse {
   AdminResult result = 1;
   repeated DailyRewardItem items = 2;
@@ -767,9 +826,9 @@ message ListRewardItemsResponse {
 
 message UpsertRewardItemRequest {
   int64 moderator_id = 1;
+  // id == 0 creates a new offer; otherwise the offer with that id is updated.
   DailyRewardItem item = 2;
 }
-
 message UpsertRewardItemResponse {
   AdminResult result = 1;
   int64 item_id = 2;
@@ -786,154 +845,229 @@ message DeleteRewardItemRequest {
   int64 item_id = 2;
 }
 
-message ListRewardsRequest {}
+// WorldEventAdminService is the moderator-facing global event control surface
+// (issue #116). The portal writes this cold config; tmServer polls it through
+// dbServer and applies it inside the single-owner loop.
+service WorldEventAdminService {
+  // GetWorldEventConfig returns the current global event settings.
+  rpc GetWorldEventConfig(GetWorldEventConfigRequest) returns (GetWorldEventConfigResponse);
+  // SetWorldEventConfig replaces the event settings.
+  rpc SetWorldEventConfig(SetWorldEventConfigRequest) returns (AdminAck);
+}
 
+message WorldEventConfig {
+  bool enabled = 1;
+  int32 item_index = 2;
+  int32 rate = 3;
+  int32 start_index = 4;
+  int32 current_index = 5;
+  int32 end_index = 6;
+  bool indexed = 7;
+  bool notice_enabled = 8;
+  bool double_exp_enabled = 9;
+  bool newbie_event_enabled = 10;
+}
+
+message GetWorldEventConfigRequest { int64 moderator_id = 1; }
+message GetWorldEventConfigResponse {
+  AdminResult result = 1;
+  int64 version = 2;
+  WorldEventConfig config = 3;
+}
+
+message SetWorldEventConfigRequest {
+  int64 moderator_id = 1;
+  WorldEventConfig config = 2;
+}
+
+// DailyRewardService is the player-facing daily reward surface the Next.js BFF
+// calls with the logged account_id from its httpOnly session (never
+// browser-supplied). A claim inserts a daily_reward_claim row for today's UTC
+// calendar day and enqueues the item into delivery_queue, which the tmServer
+// drains into the account cargo on the next login (web-platform-plan.md), the
+// same pipe DonateShopService purchases use.
+service DailyRewardService {
+  // ListRewards returns the enabled offers (the vitrine).
+  rpc ListRewards(ListRewardsRequest) returns (ListRewardsResponse);
+  // GetClaimStatus reports whether the account already claimed today.
+  rpc GetClaimStatus(GetClaimStatusRequest) returns (GetClaimStatusResponse);
+  // Claim redeems one reward offer for the account for today.
+  rpc Claim(ClaimRequest) returns (ClaimResponse);
+}
+
+// ClaimResult carries the claim outcome in the body; only infra failures
+// become gRPC errors.
+enum ClaimResult {
+  CLAIM_RESULT_UNSPECIFIED = 0;
+  CLAIM_RESULT_OK = 1;               // claim recorded + item queued for delivery
+  CLAIM_RESULT_ALREADY_CLAIMED = 2;  // account already claimed today (UTC)
+  CLAIM_RESULT_NOT_FOUND = 3;        // unknown offer or account
+  CLAIM_RESULT_DISABLED = 4;         // offer exists but is not claimable
+}
+
+message ListRewardsRequest {}
 message ListRewardsResponse {
   repeated DailyRewardItem items = 1;
 }
 
 message GetClaimStatusRequest {
-  int64 account_id = 1;
+  int64 account_id = 1; // from the BFF session, never from browser input
 }
-
 message GetClaimStatusResponse {
   bool claimed_today = 1;
-  int64 claimed_item_id = 2;
-  string claimed_item_title = 3; // "" if the claimed offer was later deleted
+  int64 claimed_item_id = 2;     // set only when claimed_today
+  string claimed_item_title = 3; // set only when claimed_today (empty if the offer was since deleted)
 }
 
-message ClaimRewardRequest {
-  int64 account_id = 1;
+message ClaimRequest {
+  int64 account_id = 1;    // from the BFF session, never from browser input
   int64 reward_item_id = 2;
 }
-
-message ClaimRewardResponse {
+message ClaimResponse {
   ClaimResult result = 1;
 }
 
-// Donate top-up (recarga de créditos). The browser never calls these directly;
-// the Next.js BFF derives account_id from the httpOnly session cookie and
-// correlates payments by external_reference. The service is agnostic to the
-// payment method (PIX now, credit card later) — the method is a field on the
-// order, not part of the RPC name. Crediting happens inside ConfirmTopupOrder
-// (same transaction that flips the order to PAID), so it is idempotent and does
-// not need a moderator_id.
+// DonateTopupService is the payment-method-agnostic donate top-up surface the
+// Next.js BFF calls server-side (never the browser). The portal owns no
+// database: every durable order and the idempotency of the credit live here.
+// PIX is the only method wired today, but the method is a FIELD of the order
+// (payment_method), never part of an RPC or table name — credit card reuses the
+// same RPCs and table later. The top-up credit happens INSIDE ConfirmTopupOrder,
+// in the same transaction that flips the order to PAID and WITHOUT a moderator_id
+// (unlike DonateAdminService.CreditDonateBalance), so a replayed webhook credits
+// exactly once.
 service DonateTopupService {
+  // Payer profile (name + CPF), reused across a payer's top-ups.
   rpc GetPayerProfile(GetPayerProfileRequest) returns (GetPayerProfileResponse);
   rpc SavePayerProfile(SavePayerProfileRequest) returns (SavePayerProfileResponse);
+
+  // CreateTopupOrder persists a PENDING order before the portal calls the
+  // gateway (persist-before-provider). ConfirmTopupOrder credits the account
+  // exactly once (idempotent on external_reference). GetTopupOrder is the poll.
   rpc CreateTopupOrder(CreateTopupOrderRequest) returns (CreateTopupOrderResponse);
   rpc ConfirmTopupOrder(ConfirmTopupOrderRequest) returns (ConfirmTopupOrderResponse);
   rpc GetTopupOrder(GetTopupOrderRequest) returns (GetTopupOrderResponse);
 }
 
-// Payment method — extensible without breaking the wire contract (append new
-// values at the end).
+// PaymentMethod is the gateway a top-up is paid through. Extensible without
+// breaking the contract — add new values at the end.
 enum PaymentMethod {
   PAYMENT_METHOD_UNSPECIFIED = 0;
   PAYMENT_METHOD_PIX = 1;
-  PAYMENT_METHOD_CREDIT_CARD = 2; // reserved; not used by the portal yet
+  PAYMENT_METHOD_CREDIT_CARD = 2; // reserved; not yet used by the portal
 }
 
+// TopupResult is the outcome of ConfirmTopupOrder.
 enum TopupResult {
   TOPUP_RESULT_UNSPECIFIED = 0;
   TOPUP_RESULT_CONFIRMED = 1;         // order was PENDING -> credited now
-  TOPUP_RESULT_ALREADY_CONFIRMED = 2; // order was already PAID -> no-op
+  TOPUP_RESULT_ALREADY_CONFIRMED = 2; // order was already PAID -> no-op (never re-credit)
   TOPUP_RESULT_NOT_FOUND = 3;         // external_reference does not exist
 }
 
+// TopupStatus is the durable state of an order.
 enum TopupStatus {
   TOPUP_STATUS_UNSPECIFIED = 0;
   TOPUP_STATUS_PENDING = 1;
   TOPUP_STATUS_PAID = 2;
 }
 
-message GetPayerProfileRequest {
-  int64 account_id = 1;
-}
+message GetPayerProfileRequest  { int64 account_id = 1; }
+message GetPayerProfileResponse { bool found = 1; string name = 2; string cpf = 3; }
 
-message GetPayerProfileResponse {
-  bool found = 1;
-  string name = 2;
-  string cpf = 3;
-}
-
-message SavePayerProfileRequest {
-  int64 account_id = 1;
-  string name = 2;
-  string cpf = 3;
-}
-
-message SavePayerProfileResponse {
-  AdminResult result = 1;
-}
+message SavePayerProfileRequest  { int64 account_id = 1; string name = 2; string cpf = 3; }
+message SavePayerProfileResponse { AdminResult result = 1; } // reuses AdminResult
 
 message CreateTopupOrderRequest {
-  int64 account_id = 1;
-  string external_reference = 2; // UUID generated by the portal (unique)
-  int32 credits = 3;             // credits to grant once paid
-  int64 amount_cents = 4;        // amount charged, in cents
-  PaymentMethod payment_method = 5;
+  int64         account_id = 1;
+  string        external_reference = 2; // UUID generated by the portal (unique)
+  int32         credits = 3;            // credits to add to donate_balance when paid
+  int64         amount_cents = 4;       // amount charged, in cents (never float)
+  PaymentMethod payment_method = 5;     // PIX for now
 }
-
 message CreateTopupOrderResponse {
   AdminResult result = 1;
   int64 order_id = 2;
 }
 
-message ConfirmTopupOrderRequest {
-  string external_reference = 1;
-}
-
+message ConfirmTopupOrderRequest  { string external_reference = 1; }
 message ConfirmTopupOrderResponse {
   TopupResult result = 1;
-  int64 new_balance = 2; // balance after crediting (or current, if already paid)
+  int64 new_balance = 2; // balance after crediting (or current balance if already-confirmed)
 }
 
 message GetTopupOrderRequest {
   string external_reference = 1;
-  int64 account_id = 2; // owner; filters so an order can't leak across accounts
+  int64  account_id = 2; // owner; filters so one account cannot read another's order
 }
-
 message GetTopupOrderResponse {
   TopupStatus status = 1;
   int32 credits = 2;
-  int64 new_balance = 3;
+  int64 new_balance = 3; // account balance when PAID; 0 otherwise
 }
 
 // DonateRevenueAdminService is the read-only revenue reporting surface behind the
-// painel de faturamento. It reads donate_topup_order (real money),
-// donate_shop_audit (wallet movements), account and donate_payer_profile. It is
-// NOT bin.v1.BillingService (the login entitlement gate). It writes NOTHING, not
-// even an audit row.
+// painel de faturamento. It answers "how much money came in this month, who paid,
+// and where did the donate go", over data that has been persisted since
+// 0008_donate_shop and 0010_donate_topup but had no read path until now.
+//
+// It is NOT bin.v1.BillingService: that is the login entitlement gate and, per
+// web-platform-plan.md, explicitly not the cash wallet. This service reads
+// donate_topup_order (real money), donate_shop_audit (wallet movements),
+// account and donate_payer_profile.
+//
+// Like every *AdminService here, request field 1 is the caller's account id,
+// re-authorized server-side against account.role ('moderator' or 'admin'). It
+// writes NOTHING — not even an audit row — so it never interacts with the
+// tmServer's single-owner loop.
 //
 // Money vs credits: *_cents is real BRL in integer cents; credits/*_credits is
 // the in-game donate wallet unit. They are different units and must never be
-// summed. Revenue is recognized on confirmed_at, never created_at.
+// summed. Revenue is recognized on confirmed_at, never created_at: an order is
+// only money once the gateway settled it.
 //
-// Time: every instant is int64 Unix SECONDS; 0 means absent. Day/week/month
-// buckets close in America/Sao_Paulo so the panel agrees with a Brazilian bank
-// statement; the instants on the wire are still absolute.
+// Time: every instant is int64 Unix SECONDS, matching db.v1's expires_at /
+// updated_at_unix; web.v1 pulls in no google.protobuf well-known types and this
+// service does not introduce that dependency. 0 means absent, so a PENDING order
+// reports confirmed_at_unix = 0.
+//
+// Bucketing timezone: day/week/month buckets close in America/Sao_Paulo, so the
+// panel agrees with a Brazilian bank statement. The instants on the wire are
+// still absolute. See docs/integrations/faturamento-nextjs.md.
 service DonateRevenueAdminService {
+  // GetRevenueSummary returns the KPI header plus an optional gap-filled series.
   rpc GetRevenueSummary(GetRevenueSummaryRequest) returns (GetRevenueSummaryResponse);
+  // ListTopupOrders is the paginated order table with the buyer identity already
+  // joined in, so the BFF never fans out one account lookup per row.
   rpc ListTopupOrders(ListTopupOrdersRequest) returns (ListTopupOrdersResponse);
+  // ListTopBuyers ranks accounts by revenue inside the window and carries the
+  // all-time (LTV) aggregate alongside. Drill-down is ListTopupOrders or
+  // ListDonateSpend with account_id set; there is no per-account RPC.
   rpc ListTopBuyers(ListTopBuyersRequest) returns (ListTopBuyersResponse);
-  // ListDonateSpend normalizes donate_shop_audit's asymmetry: for
-  // action='purchase' its account_id column is the BUYER, but for
-  // action='credit_balance' it is the MODERATOR and the credited account lives
-  // in after->>'account_id'. Each row reports subject and actor.
+  // ListDonateSpend is the donate wallet ledger over donate_shop_audit. It
+  // normalizes that table's asymmetry: for action='purchase' the audit's
+  // account_id column is the BUYER, but for action='credit_balance' it is the
+  // MODERATOR and the credited account lives in after->>'account_id'. Each row
+  // therefore reports subject (whose wallet moved) and actor (who caused it).
   rpc ListDonateSpend(ListDonateSpendRequest) returns (ListDonateSpendResponse);
+  // SearchAccounts resolves a login prefix to account ids so the panel's filter
+  // box and the top-buyer drill-down can work from a name the operator typed.
   rpc SearchAccounts(SearchAccountsRequest) returns (SearchAccountsResponse);
 }
 
-// Half-open [from_unix, to_unix). Both 0 = the last 30 days ending now; only
-// to_unix 0 = now. The server rejects from >= to and windows wider than 366 days.
+// RevenueWindow is the half-open [from_unix, to_unix) interval that scopes every
+// read on this service. Both 0 = the last 30 days ending now; only to_unix 0 =
+// now. The server rejects from >= to and any window wider than 366 days, and
+// always resolves the window to a concrete bounded range before it reaches SQL.
 message RevenueWindow {
   int64 from_unix = 1; // inclusive, Unix seconds; 0 = to_unix minus 30 days
   int64 to_unix   = 2; // exclusive, Unix seconds; 0 = now
 }
 
-// UNSPECIFIED skips the series entirely. An unrecognized value degrades to
-// UNSPECIFIED rather than failing, so a newer portal cannot break an older server.
+// RevenueBucket is the time-series granularity. UNSPECIFIED skips the series
+// entirely — the cheapest call, for a header-only refresh. An unrecognized value
+// degrades to UNSPECIFIED rather than failing, so a newer portal cannot break an
+// older server.
 enum RevenueBucket {
   REVENUE_BUCKET_UNSPECIFIED = 0;
   REVENUE_BUCKET_DAY = 1;
@@ -941,17 +1075,18 @@ enum RevenueBucket {
   REVENUE_BUCKET_MONTH = 3;
 }
 
-// UNSPECIFIED returns both movement kinds; the catalog CRUD actions are never
-// returned — they move no wallet.
+// DonateLedgerAction filters the donate_shop_audit read. UNSPECIFIED returns both
+// movement kinds; the catalog CRUD actions ('create'/'update'/'delete'/
+// 'set_enabled') are never returned — they move no wallet.
 enum DonateLedgerAction {
   DONATE_LEDGER_ACTION_UNSPECIFIED = 0;
   DONATE_LEDGER_ACTION_PURCHASE = 1; // donate_shop_audit.action = 'purchase'
   DONATE_LEDGER_ACTION_CREDIT   = 2; // donate_shop_audit.action = 'credit_balance'
 }
 
-// First block is real money recognized on confirmed_at; second is orders CREATED
-// in the window (the conversion denominator); third is donate wallet flow, in
-// CREDITS, not money.
+// RevenueTotals is the KPI header. The first block is real money recognized on
+// confirmed_at; the second is orders CREATED in the window (any status), the
+// conversion denominator; the third is donate wallet flow, in CREDITS, not money.
 message RevenueTotals {
   int64 paid_orders     = 1;
   int64 gross_cents     = 2; // serialize as string in public JSON
@@ -960,7 +1095,7 @@ message RevenueTotals {
 
   int64 created_orders  = 5; // created in the window, any status
   int64 pending_orders  = 6; // created in the window and still PENDING today
-  int64 pending_cents   = 7; // NOT revenue, never add to gross_cents
+  int64 pending_cents   = 7; // string in public JSON; NOT revenue, never add to gross_cents
 
   int64 shop_purchases  = 8;  // donate_shop_audit rows with action='purchase'
   int64 credits_spent   = 9;  // sum of after->>'price' over those rows
@@ -968,14 +1103,16 @@ message RevenueTotals {
   int64 credits_granted = 11; // sum of after->>'amount' over those rows
 }
 
+// RevenueByMethod breaks recognized revenue down by gateway. Repeated rather than
+// fixed pix_/card_ fields so adding a PaymentMethod never changes this message.
 message RevenueByMethod {
   PaymentMethod payment_method = 1;
   int64 paid_orders = 2;
   int64 gross_cents = 3; // serialize as string in public JSON
 }
 
-// Buckets with no orders ARE returned with zeroes, so the chart axis is
-// continuous and the front-end never gap-fills.
+// RevenuePoint is one bucket of the series. Buckets with no orders ARE returned
+// with zeroes, so the chart axis is continuous and the front-end never gap-fills.
 message RevenuePoint {
   int64 bucket_start_unix = 1; // instant the bucket opens (America/Sao_Paulo boundary)
   int64 paid_orders       = 2;
@@ -990,7 +1127,6 @@ message GetRevenueSummaryRequest {
   RevenueBucket bucket = 3;
   int64 account_id = 4; // 0 = all accounts; set for the per-account drill-down
 }
-
 message GetRevenueSummaryResponse {
   AdminResult result = 1;
   RevenueTotals totals = 2;
@@ -1000,8 +1136,8 @@ message GetRevenueSummaryResponse {
   int64 to_unix   = 6; // echo it back so the UI can label the period truthfully
 }
 
-// The buyer identity is resolved server-side in the same SQL (a JOIN, never N+1
-// lookups from the BFF).
+// TopupOrderRow is one row of the order table, with the buyer identity resolved
+// server-side in the same SQL (a JOIN, never N+1 lookups from the BFF).
 message TopupOrderRow {
   int64  id = 1;                 // serialize as string in public JSON
   string external_reference = 2; // the portal UUID — the reconciliation key
@@ -1009,7 +1145,9 @@ message TopupOrderRow {
   string account_name = 4;       // account.name (canonical lowercase login)
   string account_email = 5;
   string payer_name = 6;         // donate_payer_profile; empty when never filled
-  // ALWAYS masked (***.456.789-**). The raw 11 digits never leave the web-api.
+  // ALWAYS masked (***.456.789-**). The raw 11 digits never leave the web-api:
+  // 'moderator' is a coarse role and a revenue report has no use for the full
+  // number — a chargeback is reconciled by external_reference.
   string payer_cpf_masked = 7;
   int32  credits = 8;
   int64  amount_cents = 9;       // serialize as string in public JSON
@@ -1033,7 +1171,6 @@ message ListTopupOrdersRequest {
   int32 limit = 6;                  // default 50, max 100
   int32 offset = 7;                 // negative values are treated as 0
 }
-
 message ListTopupOrdersResponse {
   AdminResult result = 1;
   repeated TopupOrderRow orders = 2;
@@ -1042,29 +1179,28 @@ message ListTopupOrdersResponse {
   int64 to_unix   = 5;
 }
 
-// Carries both the window aggregate (what the panel ranks on) and the all-time
-// aggregate (the LTV).
+// TopBuyerRow carries both the window aggregate (what the panel ranks on) and the
+// all-time aggregate (the LTV), because "who spent most this month" and "who is
+// worth most overall" are different questions and the panel shows both.
 message TopBuyerRow {
   int64  account_id = 1; // serialize as string in public JSON
   string account_name = 2;
   string account_email = 3;
   int64  window_paid_orders   = 4;
-  int64  window_gross_cents   = 5; // the ranking key
+  int64  window_gross_cents   = 5; // string in public JSON; the ranking key
   int64  lifetime_paid_orders = 6;
-  int64  lifetime_gross_cents = 7; // the LTV
+  int64  lifetime_gross_cents = 7; // string in public JSON; the LTV
   int64  lifetime_credits     = 8;
   int64  first_paid_at_unix   = 9;  // all-time, not window-scoped
   int64  last_paid_at_unix    = 10; // all-time, not window-scoped
   int32  donate_balance       = 11; // current wallet — point-in-time, not a window value
 }
-
 message ListTopBuyersRequest {
   int64 moderator_id = 1;
   RevenueWindow window = 2;
   int32 limit = 3;  // default 50, max 100
   int32 offset = 4; // negative values are treated as 0
 }
-
 message ListTopBuyersResponse {
   AdminResult result = 1;
   repeated TopBuyerRow buyers = 2;
@@ -1073,25 +1209,25 @@ message ListTopBuyersResponse {
   int64 to_unix   = 5;
 }
 
-// One donate wallet movement. credits_delta is SIGNED so the column sums to a
-// meaningful net. It is in donate credits, never money.
+// DonateLedgerRow is one donate wallet movement. credits_delta is SIGNED so the
+// column sums to a meaningful net: negative for a purchase (debit), positive for
+// a moderator credit. It is in donate credits, never money.
 message DonateLedgerRow {
-  int64  id = 1; // donate_shop_audit.id
+  int64  id = 1; // donate_shop_audit.id; string in public JSON
   DonateLedgerAction action = 2;
   int64  created_at_unix = 3;
-  int64  subject_account_id = 4; // whose wallet moved
+  int64  subject_account_id = 4; // whose wallet moved; string in public JSON
   string subject_account_name = 5;
   int64  actor_account_id = 6;   // == subject on a purchase, the MODERATOR on a credit
   string actor_account_name = 7;
   int64  credits_delta = 8;      // signed: -price on purchase, +amount on credit
   int64  balance_after = 9;      // wallet balance recorded at the time
-  int64  shop_item_id = 10;      // 0 for credit_balance
+  int64  shop_item_id = 10;      // 0 for credit_balance; string in public JSON
   // Empty when the offer was deleted since the purchase (shop_item_id is
   // deliberately not an FK, so history survives). Fall back to shop_item_id.
   string shop_item_title = 11;
   string reason = 12; // credit_balance only; the moderator's note
 }
-
 message ListDonateSpendRequest {
   int64 moderator_id = 1;
   RevenueWindow window = 2;
@@ -1100,7 +1236,6 @@ message ListDonateSpendRequest {
   int32 limit = 5;               // default 50, max 100
   int32 offset = 6;              // negative values are treated as 0
 }
-
 message ListDonateSpendResponse {
   AdminResult result = 1;
   repeated DonateLedgerRow entries = 2;
@@ -1109,21 +1244,21 @@ message ListDonateSpendResponse {
   int64 to_unix   = 5;
 }
 
+// AccountSummary is the minimum identity the panel needs to turn a typed login
+// into an account_id filter. It exposes no credentials.
 message AccountSummary {
-  int64  id = 1;
+  int64  id = 1; // serialize as string in public JSON
   string name = 2;
   string email = 3;
   int32  donate_balance = 4;
   string role = 5; // 'player' | 'moderator' | 'admin'
   bool   is_blocked = 6;
 }
-
 message SearchAccountsRequest {
   int64  moderator_id = 1;
   string name_prefix = 2; // canonicalized to lowercase server-side; minimum 2 chars
   int32  limit = 3;       // default 20, max 50
 }
-
 message SearchAccountsResponse {
   AdminResult result = 1;
   repeated AccountSummary accounts = 2;

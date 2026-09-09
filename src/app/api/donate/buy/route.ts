@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   if (status !== 200) return NextResponse.json({ result: resp.result }, { status });
   return NextResponse.json({
     ok: true,
-    new_balance: resp.new_balance,
+    new_balance: String(resp.new_balance ?? 0),
     message: "Item será entregue no seu armazém no próximo login.",
   });
 }
