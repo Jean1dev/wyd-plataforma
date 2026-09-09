@@ -35,5 +35,5 @@ export async function POST(req: Request) {
 
   const status = httpForAdminResult(resp.result);
   if (status !== 200) return NextResponse.json({ result: resp.result }, { status });
-  return NextResponse.json({ new_balance: resp.new_balance });
+  return NextResponse.json({ new_balance: String(resp.new_balance ?? 0) });
 }

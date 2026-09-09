@@ -6,15 +6,15 @@ export type CharacterSummaryRaw = {
   class: number;
   level: number;
   exp: string;
-  coin: string;
+  coin: number;
   hp: number;
   max_hp: number;
   mp: number;
   max_mp: number;
-  strength: number;
-  intelligence: number;
-  dexterity: number;
-  constitution: number;
+  str: number;
+  int: number;
+  dex: number;
+  con: number;
 };
 
 export type CharacterSummaryView = {
@@ -45,14 +45,14 @@ export function normalizeCharacterSummary(raw: CharacterSummaryRaw): CharacterSu
     classLabel: cls ? CLASS_META[cls].label : `Classe ${raw.class}`,
     level: raw.level,
     exp: raw.exp,
-    coin: raw.coin,
+    coin: String(raw.coin ?? 0),
     hp: raw.hp,
     maxHp: raw.max_hp,
     mp: raw.mp,
     maxMp: raw.max_mp,
-    strength: raw.strength,
-    intelligence: raw.intelligence,
-    dexterity: raw.dexterity,
-    constitution: raw.constitution,
+    strength: raw.str,
+    intelligence: raw.int,
+    dexterity: raw.dex,
+    constitution: raw.con,
   };
 }

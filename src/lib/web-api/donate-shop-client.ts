@@ -7,9 +7,9 @@ import type { BuyResult, DonateShopItem } from "@/lib/donate/types";
 export type ListPublicShopItemsRequest = Record<string, never>;
 export type ListPublicShopItemsResponse = { items: DonateShopItem[] };
 export type GetDonateBalanceRequest = { account_id: string };
-export type GetDonateBalanceResponse = { balance: string };
+export type GetDonateBalanceResponse = { balance: number };
 export type BuyDonateShopItemRequest = { account_id: string; shop_item_id: string };
-export type BuyDonateShopItemResponse = { result: BuyResult; new_balance: string };
+export type BuyDonateShopItemResponse = { result: BuyResult; new_balance: number };
 
 type Cb<R> = (err: grpc.ServiceError | null, res: R) => void;
 

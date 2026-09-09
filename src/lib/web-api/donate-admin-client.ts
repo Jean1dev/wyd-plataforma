@@ -18,7 +18,7 @@ export type CreditDonateBalanceRequest = {
   amount: number;
   reason: string;
 };
-export type CreditDonateBalanceResponse = { result: AdminResult; new_balance: string };
+export type CreditDonateBalanceResponse = { result: AdminResult; new_balance: number };
 export type AdminAck = { result: AdminResult };
 
 type Cb<R> = (err: grpc.ServiceError | null, res: R) => void;

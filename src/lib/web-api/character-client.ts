@@ -9,15 +9,15 @@ export type CharacterSummary = {
   class: number;
   level: number;
   exp: string;
-  coin: string;
+  coin: number;
   hp: number;
   max_hp: number;
   mp: number;
   max_mp: number;
-  strength: number;
-  intelligence: number;
-  dexterity: number;
-  constitution: number;
+  str: number;
+  int: number;
+  dex: number;
+  con: number;
 };
 
 export type ListMyCharactersRequest = { account_id: string };

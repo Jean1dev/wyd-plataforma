@@ -7,7 +7,7 @@ import { donateShopRpc } from "@/lib/web-api/donate-shop-client";
 export const getDonateBalance = cache(async (accountId: string): Promise<string | null> => {
   try {
     const resp = await donateShopRpc("GetBalance", { account_id: accountId });
-    return resp.balance ?? "0";
+    return String(resp.balance ?? 0);
   } catch {
     return null;
   }
