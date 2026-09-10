@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": "dist_electron",
+    "jsx": "react-jsx",
+    "types": ["node", "vite/client"]
+  },
+  "include": ["electron/**/*.ts", "src/**/*.ts", "src/**/*.tsx", "vite.config.ts"]
+}

@@ -1,0 +1,34 @@
+{
+  "name": "wyd-launcher",
+  "version": "1.0.0",
+  "private": true,
+  "author": "WYD Plataforma",
+  "description": "Desktop launcher for WYD Kersef",
+  "main": "dist_electron/electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k \"vite --config vite.config.ts\" \"wait-on http://localhost:5173 && electron .\"",
+    "build": "tsc && vite build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "release": "npm run build && electron-builder --config electron-builder.json --publish always"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "adm-zip": "^0.5.16",
+    "electron-updater": "^6.3.9",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/adm-zip": "^0.5.5",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "concurrently": "^9.1.2",
+    "electron": "^35.0.0",
+    "electron-builder": "^26.0.12",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0",
+    "wait-on": "^8.0.3"
+  }
+}

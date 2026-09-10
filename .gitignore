@@ -19,6 +19,9 @@
 
 # production
 /build
+/launcher/node_modules
+/launcher/dist
+/launcher/dist_electron
 
 # misc
 .DS_Store

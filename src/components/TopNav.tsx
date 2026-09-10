@@ -34,6 +34,7 @@ export function TopNav({ userName, isModerator = false, donateBalance }: TopNavP
         { href: "/admin/donate", label: "Admin Donate" } as const,
         { href: "/admin/daily-reward", label: "Admin Recompensa Diária" } as const,
         { href: "/admin/revenue", label: "Admin Faturamento" } as const,
+        { href: "/admin/launcher", label: "Admin Launcher" } as const,
       ]
     : NAV_LINKS;
 
