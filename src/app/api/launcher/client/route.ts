@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { Readable } from "node:stream";
 import { getClientObject } from "@/lib/launcher-storage";
 
-export const runtime = "nodejs";
-
 export async function GET() {
   try {
     const object = await getClientObject();

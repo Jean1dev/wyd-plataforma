@@ -3,8 +3,6 @@ import { assertSameOrigin, requireModerator } from "@/lib/auth/require-moderator
 import { uploadClientObject } from "@/lib/launcher-storage";
 import { Readable } from "node:stream";
 
-export const runtime = "nodejs";
-
 async function authorize() {
   const originError = await assertSameOrigin();
   if (originError) return originError;
