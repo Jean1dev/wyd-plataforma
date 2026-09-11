@@ -1,0 +1,11 @@
+{
+  "appId": "br.com.wydplataforma.launcher",
+  "productName": "WYD Kersef Launcher",
+  "directories": { "output": "dist_electron" },
+  "files": ["dist/**/*", "dist_electron/**/*", "package.json"],
+  "asar": true,
+  "asarUnpack": ["dist_electron/**/*.js"],
+  "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
+  "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "perMachine": false },
+  "publish": { "provider": "github", "owner": "Jean1dev", "repo": "wyd-plataforma", "releaseType": "release" }
+}
