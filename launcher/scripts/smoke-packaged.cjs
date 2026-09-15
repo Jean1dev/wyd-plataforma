@@ -24,6 +24,11 @@ app.whenReady().then(async () => {
     failures.push(`${details.url}: ${details.error}`);
   });
   try {
+    const fs = require("node:fs");
+    const config = fs.readFileSync(path.join(archive, "dist_electron/electron/config.js"), "utf8");
+    if (!config.includes('https://wyd-ten.vercel.app/api/launcher/client') || config.includes('http://localhost:3000')) {
+      throw new Error("Packaged launcher is missing the production client URL");
+    }
     await win.loadFile(path.join(archive, "dist/index.html"));
     const result = await win.webContents.executeJavaScript(`new Promise((resolve, reject) => {
       const deadline = Date.now() + 5000;

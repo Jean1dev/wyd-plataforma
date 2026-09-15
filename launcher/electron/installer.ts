@@ -37,9 +37,23 @@ export async function installClient(directory: string, win: BrowserWindow): Prom
     win.webContents.send("install-progress", { phase: "extract", percent: 0 });
     new AdmZip(zipPath).extractAllTo(extracted, true);
     win.webContents.send("install-progress", { phase: "extract", percent: 100 });
-    const entries = await fsPromises.readdir(extracted);
-    for (const entry of entries) await fsPromises.rename(path.join(extracted, entry), path.join(directory, entry));
-    if (!(await isClientInstalled(directory))) throw new Error("O pacote não contém wyd.exe na raiz.");
+    const locateExecutable = async (root: string): Promise<string | undefined> => {
+      for (const entry of await fsPromises.readdir(root, { withFileTypes: true })) {
+        const candidate = path.join(root, entry.name);
+        if (entry.isFile() && entry.name.toLowerCase() === "wyd.exe") return candidate;
+        if (entry.isDirectory()) {
+          const found = await locateExecutable(candidate);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    };
+    const executable = await locateExecutable(extracted);
+    if (!executable) throw new Error("O pacote não contém wyd.exe.");
+    const sourceDirectory = path.dirname(executable);
+    const entries = await fsPromises.readdir(sourceDirectory);
+    for (const entry of entries) await fsPromises.rename(path.join(sourceDirectory, entry), path.join(directory, entry));
+    if (!(await isClientInstalled(directory))) throw new Error("Não foi possível instalar o wyd.exe.");
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOSPC") throw new Error("Não há espaço em disco suficiente para instalar o client.");
     throw error;

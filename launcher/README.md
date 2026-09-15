@@ -12,4 +12,8 @@ Atualize a versão em `package.json` e `package-lock.json`, faça o commit e pub
 
 Para instalar no Windows x64, baixe `WYD-Kersef-Launcher-Setup-X.Y.Z.exe`. O arquivo `.exe.blockmap` é auxiliar da atualização automática e não deve ser executado.
 
-Na plataforma, injete as variáveis do bucket Railway (`AWS_ENDPOINT_URL`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET_NAME` e `AWS_DEFAULT_REGION`). Defina `WYD_CLIENT_DOWNLOAD_URL` ao empacotar uma release para apontar para o endpoint público `/api/launcher/client` da plataforma. A plataforma mantém o bucket privado e faz o proxy autenticado do arquivo para o launcher.
+Na plataforma, injete as variáveis do bucket Railway (`AWS_ENDPOINT_URL`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_BUCKET_NAME` e `AWS_DEFAULT_REGION`). A região deve ser `auto`, sem espaços ou caracteres invisíveis. O client permanece no bucket privado, na chave `launcher/client/latest.zip`; o endpoint público `/api/launcher/client` transmite o ZIP usando as credenciais do servidor.
+
+O launcher empacotado usa `https://wyd-ten.vercel.app/api/launcher/client`, sem depender de variáveis no computador do jogador. `WYD_CLIENT_DOWNLOAD_URL` permite substituir esse endereço somente em desenvolvimento (HTTPS). A verificação do pacote confirma que o endereço de produção está incluído.
+
+A página pública `/download` oferece o instalador pelo endpoint `/api/launcher/download`, que consulta a última release estável do GitHub com cache de cinco minutos. `NEXT_PUBLIC_CLIENT_DOWNLOAD_URL` não é mais usado pelo site. Valide o download do ZIP antes de publicar uma nova release do launcher.

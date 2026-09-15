@@ -1,14 +1,9 @@
 import type { CSSProperties } from "react";
-import { Button, Badge } from "@/components/ui";
+import { Button } from "@/components/ui";
 import {
-  ACCESS_COMMAND,
-  CLIENT_DOWNLOAD_URL,
-  REMOVE_ACCESS_COMMAND,
   REQ_MIN,
   REQ_REC,
-  STEPS,
 } from "@/lib/portal-data";
-import { CopyCommand } from "./_components/CopyCommand";
 
 const panel: CSSProperties = {
   background: "var(--grad-panel)",
@@ -31,6 +26,10 @@ export default function DownloadPage() {
       className="wyd-screen"
       style={{ maxWidth: 1140, margin: "0 auto", padding: "32px 24px 72px" }}
     >
+      <nav aria-label="Navegação" style={{ display: "flex", gap: 16, marginBottom: 24 }}>
+        <Button href="/" variant="ghost">Entrar / Criar conta</Button>
+        <Button href="/dashboard" variant="ghost">Painel</Button>
+      </nav>
       <div className="wyd-eyebrow" style={{ marginBottom: 6 }}>
         Entre na batalha
       </div>
@@ -55,8 +54,8 @@ export default function DownloadPage() {
           textWrap: "pretty",
         }}
       >
-        O cliente roda em <strong style={{ color: "var(--gold-300)" }}>Windows (PC)</strong>.
-        Acompanhe sua conta, ranking e recompensas de qualquer dispositivo — o portal é responsivo.
+        Baixe o launcher para Windows 10/11 (64 bits). Ele instala o jogo e prepara
+        a conexão automaticamente. Mantenha o launcher aberto enquanto joga.
       </p>
 
       <div
@@ -70,93 +69,22 @@ export default function DownloadPage() {
       >
         <div style={{ display: "flex", gap: 18, alignItems: "flex-start", flexWrap: "wrap" }}>
           <div style={{ flex: "1 1 360px", minWidth: 0 }}>
-            <Badge variant="gold" style={{ marginBottom: 12 }}>
-              Acesso temporário
-            </Badge>
-            <h2 style={{ ...sectionTitle, marginBottom: 8 }}>Informações de acesso</h2>
-            <p
-              style={{
-                fontFamily: "var(--font-body)",
-                fontSize: 15,
-                lineHeight: 1.55,
-                color: "var(--parchment-200)",
-                margin: 0,
-                maxWidth: 720,
-              }}
-            >
-              O jogo ainda não está em uma fase estável, mas estamos trabalhando para deixar tudo 100%.
-              No momento, use o client abaixo e rode o comando de acesso no Terminal ou PowerShell do Windows
-              como administrador antes de jogar.
+            <h2 style={{ ...sectionTitle, marginBottom: 8 }}>Launcher WYD Kersef</h2>
+            <p style={{ color: "var(--parchment-200)", margin: 0 }}>
+              Instale o launcher, escolha a pasta do jogo e clique em instalar para começar.
             </p>
           </div>
           <div style={{ flex: "0 1 220px", minWidth: 180 }}>
-            <Button href={CLIENT_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" block>
-              Baixar client
-            </Button>
+            <a className="wyd-btn wyd-btn--primary wyd-btn--md wyd-btn--block" href="/api/launcher/download">
+              Baixar launcher para Windows
+            </a>
           </div>
         </div>
 
-        <div style={{ display: "grid", gap: 14, marginTop: 20 }}>
-          <CopyCommand label="Comando para conectar" command={ACCESS_COMMAND} />
-          <CopyCommand label="Para remover depois" command={REMOVE_ACCESS_COMMAND} tone="muted" />
-        </div>
+
       </div>
 
       <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-        {/* How to start */}
-        <div style={{ flex: "1 1 320px", minWidth: 0 }}>
-          <h2 style={sectionTitle}>Como começar</h2>
-          <div style={{ ...panel, padding: 22 }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-              {STEPS.map((s) => (
-                <div key={s.n} style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-                  <span
-                    style={{
-                      width: 30,
-                      height: 30,
-                      flex: "none",
-                      borderRadius: "50%",
-                      border: "1px solid var(--gold-600)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontFamily: "var(--font-display)",
-                      fontWeight: 700,
-                      fontSize: 14,
-                      color: "var(--gold-300)",
-                      background: "var(--surface-inset)",
-                    }}
-                  >
-                    {s.n}
-                  </span>
-                  <div>
-                    <div
-                      style={{
-                        fontFamily: "var(--font-body)",
-                        fontSize: 15,
-                        fontWeight: 600,
-                        color: "var(--parchment-100)",
-                      }}
-                    >
-                      {s.title}
-                    </div>
-                    <div
-                      style={{
-                        fontFamily: "var(--font-body)",
-                        fontSize: 13,
-                        color: "var(--text-muted)",
-                        marginTop: 2,
-                      }}
-                    >
-                      {s.desc}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
         {/* Requirements */}
         <div style={{ flex: "1 1 320px", minWidth: 0 }}>
           <h2 style={sectionTitle}>Requisitos</h2>
