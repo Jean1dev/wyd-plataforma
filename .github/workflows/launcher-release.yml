@@ -29,6 +29,8 @@ jobs:
           if ($env:GITHUB_REF_NAME -ne "v$version") { throw "Tag must match launcher version $version" }
       - run: npm run build
       - run: npx electron-builder --config electron-builder.json --publish never
+      - name: Check packaged launcher interface
+        run: npx electron scripts/smoke-packaged.cjs
       - name: Publish complete installer release
         env:
           GH_TOKEN: ${{ github.token }}
