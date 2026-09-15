@@ -1,6 +1,7 @@
 {
   "appId": "br.com.wydplataforma.launcher",
   "productName": "WYD Kersef Launcher",
+  "artifactName": "WYD-Kersef-Launcher-Setup-${version}.${ext}",
   "directories": { "output": "dist_electron" },
   "files": ["dist/**/*", "dist_electron/**/*", "package.json"],
   "asar": true,

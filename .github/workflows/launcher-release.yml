@@ -7,6 +7,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: launcher-release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: windows-latest
@@ -18,8 +22,41 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
+      - run: npm ci
+      - name: Validate release version
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          if ($env:GITHUB_REF_NAME -ne "v$version") { throw "Tag must match launcher version $version" }
       - run: npm run build
-      - run: npx electron-builder --publish always
+      - run: npx electron-builder --config electron-builder.json --publish never
+      - name: Publish complete installer release
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $installer = "WYD-Kersef-Launcher-Setup-$version.exe"
+          $names = @($installer, "$installer.blockmap", "latest.yml")
+          $files = @($names | ForEach-Object { Join-Path dist_electron $_ })
+          foreach ($file in $files) {
+            if (!(Test-Path -LiteralPath $file) -or (Get-Item -LiteralPath $file).Length -eq 0) {
+              throw "Missing or empty release asset: $file"
+            }
+          }
+          $header = [System.IO.File]::ReadAllBytes((Resolve-Path $files[0]))
+          if ($header[0] -ne 0x4D -or $header[1] -ne 0x5A) { throw "Installer is not a Windows executable" }
+          gh release view $env:GITHUB_REF_NAME --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $env:GITHUB_REF_NAME --repo $env:GITHUB_REPOSITORY --verify-tag --draft --title "Launcher $version" --notes "Baixe $installer para instalar o launcher no Windows x64."
+            if ($LASTEXITCODE -ne 0) { throw "Could not create release" }
+          }
+          gh release upload $env:GITHUB_REF_NAME @files --repo $env:GITHUB_REPOSITORY --clobber
+          if ($LASTEXITCODE -ne 0) { throw "Could not upload release assets" }
+          $release = gh release view $env:GITHUB_REF_NAME --repo $env:GITHUB_REPOSITORY --json assets | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw "Could not verify release assets" }
+          foreach ($name in $names) {
+            if (!($release.assets | Where-Object { $_.name -eq $name -and $_.size -gt 0 })) {
+              throw "Release is missing asset: $name"
+            }
+          }
+          gh release edit $env:GITHUB_REF_NAME --repo $env:GITHUB_REPOSITORY --draft=false --latest
+          if ($LASTEXITCODE -ne 0) { throw "Could not publish release" }
