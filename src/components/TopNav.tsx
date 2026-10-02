@@ -120,6 +120,10 @@ export function TopNav({ userName, isModerator = false, donateBalance }: TopNavP
         </nav>
 
         <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0" }}>
+          {/* Plain anchor: /jogar is a route handler that mints a one-use ticket, so it must not be prefetched. */}
+          <a href="/jogar" className="wyd-btn wyd-btn--primary wyd-btn--sm">
+            Jogar no navegador
+          </a>
           <div
             style={{
               display: "flex",

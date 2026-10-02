@@ -29,6 +29,8 @@ export default function DownloadPage() {
       <nav aria-label="Navegação" style={{ display: "flex", gap: 16, marginBottom: 24 }}>
         <Button href="/" variant="ghost">Entrar / Criar conta</Button>
         <Button href="/dashboard" variant="ghost">Painel</Button>
+        {/* Plain anchor: /jogar mints a one-use ticket and must not be prefetched. */}
+        <a href="/jogar" className="wyd-btn wyd-btn--primary wyd-btn--md">Jogar no navegador</a>
       </nav>
       <div className="wyd-eyebrow" style={{ marginBottom: 6 }}>
         Entre na batalha

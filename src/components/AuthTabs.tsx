@@ -79,6 +79,13 @@ export function AuthTabs() {
       return;
     }
 
+    // The web client sends visitors here with ?next=/jogar. Only that exact
+    // path is honored, so the parameter cannot become an open redirect.
+    if (new URLSearchParams(window.location.search).get("next") === "/jogar") {
+      window.location.assign("/jogar");
+      return;
+    }
+
     router.push("/dashboard");
     router.refresh();
   }
