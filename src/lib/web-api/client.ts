@@ -12,6 +12,11 @@ type AccountClient = {
     req: VerifyCredentialsRequest,
     cb: (err: grpc.ServiceError | null, res: VerifyCredentialsResponse) => void,
   ): void;
+  IssuePlayCode(
+    req: IssuePlayCodeRequest,
+    options: grpc.CallOptions,
+    cb: (err: grpc.ServiceError | null, res: IssuePlayCodeResponse) => void,
+  ): void;
 };
 
 export type CreateAccountRequest = {
@@ -35,6 +40,23 @@ export type VerifyCredentialsResponse = {
   account_id: string;
   blocked: boolean;
   role: string;
+};
+
+export type IssuePlayCodeRequest = {
+  assertion: string;
+};
+
+export type IssuePlayCodeResponse = {
+  result:
+    | "PLAY_CODE_RESULT_OK"
+    | "PLAY_CODE_RESULT_DISABLED"
+    | "PLAY_CODE_RESULT_INVALID_ASSERTION"
+    | "PLAY_CODE_RESULT_NO_ACCOUNT"
+    | "PLAY_CODE_RESULT_BLOCKED"
+    | "PLAY_CODE_RESULT_UNSPECIFIED";
+  account_name: string;
+  code: string;
+  expires_in_seconds: number;
 };
 
 type WebProto = {
@@ -76,5 +98,13 @@ export function rpc(
     }
 
     c.VerifyCredentials(req as VerifyCredentialsRequest, (err, res) => (err ? reject(err) : resolve(res)));
+  });
+}
+
+/** IssuePlayCode with a deadline: opening the game must not wait on web-api. */
+export function issuePlayCodeRpc(req: IssuePlayCodeRequest, timeoutMs: number): Promise<IssuePlayCodeResponse> {
+  const c = accountClient();
+  return new Promise((resolve, reject) => {
+    c.IssuePlayCode(req, { deadline: Date.now() + timeoutMs }, (err, res) => (err ? reject(err) : resolve(res)));
   });
 }

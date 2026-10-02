@@ -4,31 +4,41 @@ import { createHmac, randomBytes } from "node:crypto";
 // w2pp-OpenWyd-WebClient repo, ADR 015). Format, shared with the gateway:
 //   base64url(JSON {sub, iat, exp, jti}) "." base64url(HMAC-SHA256(secret, LABEL + payload))
 // It is posted in a form body (never in a URL) and the gateway accepts each
-// jti once. It carries no password, name or role.
+// jti once. It carries no password or role. With a one-time login code
+// (play-code.ts, ADR 017 of the web client) it also carries the login name and
+// the code, which the gateway hands to the page once.
 
 export const PLAY_TICKET_LABEL = "wyd-play-ticket.v1.";
 export const PLAY_TICKET_LIFETIME_SECONDS = 60;
 export const MIN_PLAY_TICKET_SECRET_LENGTH = 32;
 
-export type PlayTicketClaims = { sub: string; iat: number; exp: number; jti: string };
+export type PlayTicketClaims = { sub: string; iat: number; exp: number; jti: string; name?: string; code?: string };
 
 export type PlayTicketConfig = { secret: string; webClientUrl: string };
 
 export function signPlayTicket(secret: string, claims: PlayTicketClaims): string {
-  // Fixed key order keeps the payload byte-identical to the shared test vector.
-  const { sub, iat, exp, jti } = claims;
-  const payload = Buffer.from(JSON.stringify({ sub, iat, exp, jti })).toString("base64url");
+  // Fixed key order keeps the payload byte-identical to the shared test vector;
+  // the login fields are only present when a code was issued.
+  const { sub, iat, exp, jti, name, code } = claims;
+  const body = name && code ? { sub, iat, exp, jti, name, code } : { sub, iat, exp, jti };
+  const payload = Buffer.from(JSON.stringify(body)).toString("base64url");
   const mac = createHmac("sha256", secret).update(PLAY_TICKET_LABEL + payload).digest("base64url");
   return `${payload}.${mac}`;
 }
 
-export function issuePlayTicket(secret: string, accountId: string, nowMs = Date.now()): string {
+export function issuePlayTicket(
+  secret: string,
+  accountId: string,
+  nowMs = Date.now(),
+  login?: { name: string; code: string } | null,
+): string {
   const iat = Math.floor(nowMs / 1000);
   return signPlayTicket(secret, {
     sub: accountId,
     iat,
     exp: iat + PLAY_TICKET_LIFETIME_SECONDS,
     jti: randomBytes(16).toString("hex"),
+    ...(login ? { name: login.name, code: login.code } : {}),
   });
 }
 
