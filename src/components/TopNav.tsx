@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useRef, type RefObject } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { Menu } from "lucide-react";
 import { Avatar } from "@/components/ui";
 import { NAV_LINKS } from "@/lib/portal-data";
 
@@ -12,6 +14,20 @@ type TopNavProps = {
   donateBalance: string;
 };
 
+type NavLinkDef = { href: string; label: string };
+
+const ADMIN_LINKS: readonly NavLinkDef[] = [
+  { href: "/admin/npcs", label: "NPCs" },
+  { href: "/admin/mob-templates", label: "Stats de Mob" },
+  { href: "/admin/drops", label: "Drops" },
+  { href: "/admin/world-events", label: "Eventos" },
+  { href: "/admin/attribute-map", label: "AttributeMap" },
+  { href: "/admin/donate", label: "Donate" },
+  { href: "/admin/daily-reward", label: "Recompensa Diária" },
+  { href: "/admin/revenue", label: "Faturamento" },
+  { href: "/admin/launcher", label: "Launcher" },
+];
+
 function initials(name: string) {
   return name
     .slice(0, 2)
@@ -19,24 +35,40 @@ function initials(name: string) {
     .padEnd(2, "?");
 }
 
+function isActive(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+// <details> menus stay open across client navigations; close them on pick.
+function closeMenu(ref: RefObject<HTMLDetailsElement | null>) {
+  if (ref.current) ref.current.open = false;
+}
+
 export function TopNav({ userName, isModerator = false, donateBalance }: TopNavProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const adminMenu = useRef<HTMLDetailsElement>(null);
+  const burgerMenu = useRef<HTMLDetailsElement>(null);
+  const adminActive = ADMIN_LINKS.some((l) => isActive(pathname, l.href));
 
-  const navLinks = isModerator
-    ? [
-        ...NAV_LINKS,
-        { href: "/admin/npcs", label: "Admin NPCs" } as const,
-        { href: "/admin/mob-templates", label: "Admin Stats de Mob" } as const,
-        { href: "/admin/drops", label: "Admin Drops" } as const,
-        { href: "/admin/world-events", label: "Admin Eventos" } as const,
-        { href: "/admin/attribute-map", label: "Admin AttributeMap" } as const,
-        { href: "/admin/donate", label: "Admin Donate" } as const,
-        { href: "/admin/daily-reward", label: "Admin Recompensa Diária" } as const,
-        { href: "/admin/revenue", label: "Admin Faturamento" } as const,
-        { href: "/admin/launcher", label: "Admin Launcher" } as const,
-      ]
-    : NAV_LINKS;
+  // Dropdowns close on outside click / Escape, like a native menu.
+  useEffect(() => {
+    const menus = [adminMenu, burgerMenu];
+    function onPointerDown(e: PointerEvent) {
+      for (const m of menus) {
+        if (m.current?.open && !m.current.contains(e.target as Node)) m.current.open = false;
+      }
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") menus.forEach(closeMenu);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, []);
 
   async function logout() {
     await fetch("/api/logout", { method: "POST" }).catch(() => null);
@@ -44,34 +76,24 @@ export function TopNav({ userName, isModerator = false, donateBalance }: TopNavP
     router.refresh();
   }
 
-  return (
-    <header
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 100,
-        background: "rgba(20,17,12,0.88)",
-        backdropFilter: "blur(8px)",
-        borderBottom: "1px solid var(--iron-400)",
-        boxShadow: "var(--shadow-md)",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: 1320,
-          margin: "0 auto",
-          padding: "0 24px",
-          minHeight: 64,
-          display: "flex",
-          alignItems: "center",
-          gap: 24,
-          flexWrap: "wrap",
-        }}
+  function renderLinks(links: readonly NavLinkDef[], menu?: RefObject<HTMLDetailsElement | null>) {
+    return links.map((l) => (
+      <Link
+        key={l.href}
+        href={l.href}
+        className="wyd-navlink"
+        aria-current={isActive(pathname, l.href) ? "page" : undefined}
+        onClick={menu ? () => closeMenu(menu) : undefined}
       >
-        <Link
-          href="/dashboard"
-          style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0" }}
-        >
+        {l.label}
+      </Link>
+    ));
+  }
+
+  return (
+    <header className="wyd-topnav">
+      <div className="wyd-topnav__inner">
+        <Link href="/dashboard" className="wyd-topnav__brand">
           <Image
             src="/assets/wyd-logo-crop.png"
             alt="WYD"
@@ -80,121 +102,57 @@ export function TopNav({ userName, isModerator = false, donateBalance }: TopNavP
             priority
             style={{ height: 36, width: "auto", filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.6))" }}
           />
-          <span
-            style={{
-              fontFamily: "var(--font-ui)",
-              fontSize: 11,
-              letterSpacing: "0.22em",
-              textTransform: "uppercase",
-              color: "var(--gold-500)",
-            }}
-          >
-            Portal
-          </span>
+          <span>Portal</span>
         </Link>
 
-        <nav style={{ display: "flex", gap: 4, flex: 1, flexWrap: "wrap" }}>
-          {navLinks.map((l) => {
-            const active = pathname === l.href || pathname.startsWith(`${l.href}/`);
-            return (
-              <Link
-                key={l.href}
-                href={l.href}
-                className="wyd-navlink"
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: "var(--radius-sm)",
-                  fontFamily: "var(--font-ui)",
-                  fontSize: 13,
-                  fontWeight: 500,
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  color: active ? "var(--gold-300)" : "var(--text-muted)",
-                  borderBottom: active ? "2px solid var(--gold-500)" : "2px solid transparent",
-                }}
-              >
-                {l.label}
-              </Link>
-            );
-          })}
+        <nav className="wyd-topnav__links" aria-label="Principal">
+          {renderLinks(NAV_LINKS)}
+          {isModerator ? (
+            <details ref={adminMenu} className="wyd-menu">
+              <summary className="wyd-navlink" aria-current={adminActive ? "page" : undefined}>
+                Admin<span className="wyd-menu__caret">▼</span>
+              </summary>
+              <div className="wyd-menu__panel">{renderLinks(ADMIN_LINKS, adminMenu)}</div>
+            </details>
+          ) : null}
         </nav>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0" }}>
+        <div className="wyd-topnav__right">
           {/* Plain anchor: /jogar is a route handler that mints a one-use ticket, so it must not be prefetched. */}
-          <a href="/jogar" className="wyd-btn wyd-btn--primary wyd-btn--sm">
-            Jogar no navegador
+          <a href="/jogar" className="wyd-btn wyd-btn--cta wyd-btn--sm">
+            Jogar
           </a>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 7,
-              padding: "6px 12px",
-              background: "var(--surface-inset)",
-              borderRadius: "var(--radius-pill)",
-              border: "1px solid var(--gold-700)",
-              boxShadow: "var(--bevel-in)",
-            }}
-          >
-            <span style={{ color: "var(--gold-400)", fontSize: 14 }}>◈</span>
-            <span
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: 14,
-                color: "var(--gold-300)",
-                fontWeight: 500,
-              }}
-            >
-              {donateBalance}
-            </span>
+          <div className="wyd-balance" title="Saldo de Donate">
+            <span className="wyd-balance__gem">◈</span>
+            {donateBalance}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+          <div className="wyd-user">
             <Avatar initials={initials(userName)} size={36} ring="var(--gold-600)" />
-            <div style={{ lineHeight: 1.2 }}>
-              <div
-                style={{
-                  fontFamily: "var(--font-body)",
-                  fontSize: 13,
-                  color: "var(--parchment-100)",
-                  fontWeight: 600,
-                }}
-              >
-                {userName}
-              </div>
-              <div
-                style={{
-                  fontFamily: "var(--font-ui)",
-                  fontSize: 10,
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  color: "var(--emerald-400)",
-                }}
-              >
-                ● Online
-              </div>
+            <div className="wyd-user__meta" style={{ lineHeight: 1.2 }}>
+              <div className="wyd-user__name">{userName}</div>
+              <div className="wyd-user__status">● Online</div>
             </div>
           </div>
 
-          <button
-            type="button"
-            title="Sair"
-            onClick={logout}
-            style={{
-              background: "transparent",
-              border: "1px solid var(--iron-400)",
-              borderRadius: "var(--radius-sm)",
-              color: "var(--text-muted)",
-              cursor: "pointer",
-              padding: "7px 10px",
-              fontFamily: "var(--font-ui)",
-              fontSize: 11,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-            }}
-          >
+          <button type="button" title="Sair" onClick={logout} className="wyd-icon-btn">
             Sair
           </button>
+
+          <details ref={burgerMenu} className="wyd-menu wyd-topnav__burger">
+            <summary aria-label="Menu">
+              <Menu size={20} />
+            </summary>
+            <nav className="wyd-menu__panel" aria-label="Menu">
+              {renderLinks(NAV_LINKS, burgerMenu)}
+              {isModerator ? (
+                <>
+                  <div className="wyd-menu__heading">Admin</div>
+                  {renderLinks(ADMIN_LINKS, burgerMenu)}
+                </>
+              ) : null}
+            </nav>
+          </details>
         </div>
       </div>
     </header>

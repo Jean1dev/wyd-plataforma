@@ -1,41 +1,10 @@
-import type { CSSProperties } from "react";
-import { Button, Stat, StatBar, Badge, Tag, ClassCrest } from "@/components/ui";
+import { Button, Stat, StatBar, Badge, Tag, ClassCrest, HeroArt } from "@/components/ui";
 import { NEWS, SERVER_NAME, EXP_RATE } from "@/lib/portal-data";
 import { getSession } from "@/lib/auth/session";
 import { characterRpc } from "@/lib/web-api/character-client";
 import { normalizeCharacterSummary, type CharacterSummaryView } from "@/lib/web-api/character-normalize";
 import { getDonateBalance } from "@/lib/donate/balance";
 import { formatDonate as formatIntegerLike } from "@/lib/donate/format";
-
-const panel: CSSProperties = {
-  background: "var(--grad-panel)",
-  border: "1px solid var(--iron-400)",
-  borderRadius: "var(--radius-lg)",
-  boxShadow: "var(--bevel-raise), var(--shadow-md)",
-};
-
-const sectionTitle: CSSProperties = {
-  fontFamily: "var(--font-display)",
-  fontWeight: 700,
-  fontSize: 22,
-  color: "var(--gold-400)",
-  margin: 0,
-};
-
-const cardTitle: CSSProperties = {
-  fontFamily: "var(--font-display)",
-  fontWeight: 700,
-  fontSize: 18,
-  color: "var(--parchment-100)",
-};
-
-const statLabel: CSSProperties = {
-  fontFamily: "var(--font-ui)",
-  fontSize: 11,
-  letterSpacing: "0.08em",
-  textTransform: "uppercase",
-  color: "var(--text-faint)",
-};
 
 type CharactersState =
   | { status: "ready"; characters: CharacterSummaryView[] }
@@ -81,86 +50,43 @@ export default async function DashboardPage() {
   const characters = charactersState.characters;
 
   return (
-    <div
-      className="wyd-screen"
-      style={{ maxWidth: 1320, margin: "0 auto", padding: "32px 24px 72px" }}
-    >
+    <div className="wyd-screen wyd-container">
       {/* Hero */}
-      <div
-        style={{
-          position: "relative",
-          borderRadius: "var(--radius-lg)",
-          overflow: "hidden",
-          border: "1px solid var(--iron-400)",
-          marginBottom: 32,
-          boxShadow: "var(--shadow-lg)",
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "url('/assets/wyd-keyart.png') center 28%/cover",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "linear-gradient(90deg, rgba(10,8,5,0.94) 28%, rgba(10,8,5,0.35) 100%)",
-          }}
-        />
-        <div style={{ position: "relative", padding: 36 }}>
-          <div className="wyd-eyebrow" style={{ marginBottom: 8 }}>
-            Bem-vindo de volta, guerreiro
-          </div>
-          <h1
-            style={{
-              fontFamily: "var(--font-hero)",
-              fontWeight: 900,
-              fontSize: "clamp(34px,6vw,48px)",
-              color: "#fff",
-              margin: "0 0 12px",
-              textShadow: "0 3px 14px #000",
-            }}
-          >
-            Salão dos Heróis
-          </h1>
-          <p
-            style={{
-              fontFamily: "var(--font-body)",
-              fontSize: 16,
-              color: "var(--parchment-200)",
-              maxWidth: 480,
-              margin: "0 0 20px",
-              textWrap: "pretty",
-            }}
-          >
-            O servidor <strong style={{ color: "var(--gold-300)" }}>{SERVER_NAME}</strong> está
-            online. Forje sua lenda, suba no ranking e domine as terras de Kersef.
+      <section className="wyd-frame wyd-frame--flush wyd-hero">
+        <HeroArt sizes="(max-width: 1240px) 100vw, 1240px" className="wyd-hero__art" />
+        <div className="wyd-hero__shade" />
+        <div className="wyd-hero__body">
+          <div className="wyd-eyebrow">Bem-vindo de volta, guerreiro</div>
+          <h1 className="wyd-hero__title">Salão dos Heróis</h1>
+          <p className="wyd-hero__lead">
+            O servidor <strong style={{ color: "var(--gold-300)" }}>{SERVER_NAME}</strong> está online. Forje sua
+            lenda, suba no ranking e domine as terras de Kersef.
           </p>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <Button href="/recompensas">Recompensa diária</Button>
-            <Button href="/rankings" variant="ghost">
-              Ver Rankings
+          <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
+            {/* Plain anchor: /jogar mints a one-use ticket and must not be prefetched. */}
+            <a href="/jogar" className="wyd-btn wyd-btn--cta wyd-btn--md" style={{ marginInline: 30 }}>
+              Jogar agora
+            </a>
+            <Button href="/recompensas" variant="ghost">
+              Recompensa diária
             </Button>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Stats */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))",
-          gap: 16,
+          gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
+          gap: 18,
           marginBottom: 36,
         }}
       >
-        <div style={{ ...panel, padding: 18 }}>
+        <div className="wyd-frame">
           <Stat label="Jogadores Online" value="1.284" accent="var(--emerald-400)" sub="pico hoje: 1.902" />
         </div>
-        <div style={{ ...panel, padding: 18 }}>
+        <div className="wyd-frame wyd-frame--gold">
           <Stat
             label="Donate Coins"
             value={balanceState.status === "ready" ? formatIntegerLike(balanceState.balance) : "--"}
@@ -168,31 +94,25 @@ export default async function DashboardPage() {
             sub={balanceState.status === "ready" ? "saldo atual" : "indisponível"}
           />
         </div>
-        <div style={{ ...panel, padding: 18 }}>
+        <div className="wyd-frame">
           <Stat label="Personagens" value={String(characters.length)} accent="var(--steel-300)" sub="vinculados" />
         </div>
-        <div style={{ ...panel, padding: 18 }}>
+        <div className="wyd-frame">
           <Stat label="Próxima Guerra" value="02:14" accent="var(--blood-400)" sub="Torre de Cristal" />
         </div>
       </div>
 
       {/* Two columns */}
-      <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
         {/* Characters */}
         <div style={{ flex: "2 1 440px", minWidth: 0 }}>
-          <div style={{ marginBottom: 14 }}>
-            <h2 style={sectionTitle}>Meus Personagens</h2>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <h2 className="wyd-section-title wyd-title-gold">Meus Personagens</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {charactersState.status === "unavailable" ? (
-              <div style={{ ...panel, padding: 18, color: "var(--parchment-200)", fontFamily: "var(--font-body)" }}>
-                Não foi possível carregar seus personagens agora.
-              </div>
+              <div className="wyd-frame wyd-muted">Não foi possível carregar seus personagens agora.</div>
             ) : null}
             {charactersState.status === "ready" && characters.length === 0 ? (
-              <div style={{ ...panel, padding: 18, color: "var(--parchment-200)", fontFamily: "var(--font-body)" }}>
-                Nenhum personagem vinculado a esta conta.
-              </div>
+              <div className="wyd-frame wyd-muted">Nenhum personagem vinculado a esta conta.</div>
             ) : null}
             {characters.map((c) => {
               const hpMax = characterMaxStat(c, "hp");
@@ -201,9 +121,8 @@ export default async function DashboardPage() {
               return (
                 <div
                   key={`${c.slot}-${c.name}`}
+                  className="wyd-frame"
                   style={{
-                    ...panel,
-                    padding: 18,
                     display: "grid",
                     gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
                     gap: 18,
@@ -211,14 +130,22 @@ export default async function DashboardPage() {
                   }}
                 >
                   <div style={{ display: "flex", gap: 14, alignItems: "center", minWidth: 0 }}>
-                    {c.cls ? (
-                      <ClassCrest cls={c.cls} size="lg" />
-                    ) : (
-                      <UnknownClassCrest label={c.classLabel} />
-                    )}
+                    <div className="wyd-slot" style={{ minHeight: 0, padding: 4 }}>
+                      {c.cls ? <ClassCrest cls={c.cls} size="lg" /> : <UnknownClassCrest label={c.classLabel} />}
+                    </div>
                     <div style={{ minWidth: 0 }}>
-                      <div style={cardTitle}>{c.name}</div>
-                      <Badge variant="gold" style={{ marginTop: 4 }}>
+                      <div
+                        style={{
+                          fontFamily: "var(--font-display)",
+                          fontWeight: 700,
+                          fontSize: 19,
+                          letterSpacing: "0.03em",
+                          color: "var(--parchment-50)",
+                        }}
+                      >
+                        {c.name}
+                      </div>
+                      <Badge variant="gold" style={{ marginTop: 5 }}>
                         Nível {c.level}
                       </Badge>
                       <div
@@ -226,6 +153,7 @@ export default async function DashboardPage() {
                           marginTop: 6,
                           fontFamily: "var(--font-ui)",
                           fontSize: 11,
+                          letterSpacing: "0.08em",
                           color: "var(--text-faint)",
                           textTransform: "uppercase",
                         }}
@@ -253,29 +181,7 @@ export default async function DashboardPage() {
                     }}
                   >
                     {characterAttributes(c).map((attr) => (
-                      <div
-                        key={attr.label}
-                        style={{
-                          border: "1px solid var(--iron-400)",
-                          borderRadius: "var(--radius-md)",
-                          background: "rgba(255,255,255,0.02)",
-                          padding: "10px 12px",
-                        }}
-                      >
-                        <div style={statLabel}>{attr.label}</div>
-                        <div
-                          style={{
-                            marginTop: 4,
-                            fontFamily: "var(--font-display)",
-                            fontSize: 18,
-                            fontWeight: 700,
-                            color: "var(--parchment-100)",
-                            lineHeight: 1.1,
-                          }}
-                        >
-                          {formatIntegerLike(attr.value)}
-                        </div>
-                      </div>
+                      <MiniStat key={attr.label} label={attr.label} value={formatIntegerLike(attr.value)} />
                     ))}
                   </div>
                 </div>
@@ -286,8 +192,8 @@ export default async function DashboardPage() {
 
         {/* Realm status + news */}
         <div style={{ flex: "1 1 280px", minWidth: 0 }}>
-          <h2 style={{ ...sectionTitle, margin: "0 0 14px" }}>Status do Reino</h2>
-          <div style={{ ...panel, padding: 20, marginBottom: 24 }}>
+          <h2 className="wyd-section-title wyd-title-gold">Status do Reino</h2>
+          <div className="wyd-frame" style={{ marginBottom: 28 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <ServerRow name={SERVER_NAME} status="online" />
               <ServerRow name="Azran — Classic" status="online" />
@@ -308,31 +214,15 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          <h2 style={{ ...sectionTitle, margin: "0 0 14px" }}>Últimas Notícias</h2>
-          <div
-            className="wyd-parchment"
-            style={{ boxShadow: "var(--shadow-md)", padding: 20 }}
-          >
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <h2 className="wyd-section-title wyd-title-gold">Últimas Notícias</h2>
+          <div className="wyd-frame">
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {NEWS.map((n) => (
                 <div key={n.title} style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
-                  <span
-                    style={{
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 12,
-                      color: "var(--gold-800)",
-                      flex: "none",
-                    }}
-                  >
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--gold-500)", flex: "none" }}>
                     {n.date}
                   </span>
-                  <span
-                    style={{
-                      fontFamily: "var(--font-body)",
-                      fontSize: 14,
-                      color: "var(--obsidian-800)",
-                    }}
-                  >
+                  <span style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--parchment-100)" }}>
                     {n.title}
                   </span>
                 </div>
@@ -358,8 +248,6 @@ function UnknownClassCrest({ label }: { label: string }) {
         justifyContent: "center",
         borderRadius: "var(--radius-md)",
         background: "var(--surface-inset)",
-        border: "1px solid var(--iron-300)",
-        boxShadow: "var(--bevel-in)",
         color: "var(--steel-300)",
         fontFamily: "var(--font-display)",
         fontWeight: 700,
@@ -373,28 +261,9 @@ function UnknownClassCrest({ label }: { label: string }) {
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div
-      style={{
-        minWidth: 96,
-        border: "1px solid var(--iron-400)",
-        borderRadius: "var(--radius-md)",
-        padding: "8px 10px",
-        background: "rgba(255,255,255,0.02)",
-      }}
-    >
-      <div style={statLabel}>{label}</div>
-      <div
-        style={{
-          marginTop: 4,
-          fontFamily: "var(--font-display)",
-          fontSize: 18,
-          fontWeight: 700,
-          color: "var(--parchment-100)",
-          lineHeight: 1.1,
-        }}
-      >
-        {value}
-      </div>
+    <div className="wyd-cell" style={{ minWidth: 96 }}>
+      <div className="wyd-cell__label">{label}</div>
+      <div className="wyd-cell__value">{value}</div>
     </div>
   );
 }
@@ -403,9 +272,7 @@ function ServerRow({ name, status }: { name: string; status: "online" | "manuten
   const online = status === "online";
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-      <span style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--parchment-100)" }}>
-        {name}
-      </span>
+      <span style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--parchment-100)" }}>{name}</span>
       <span
         style={{
           fontFamily: "var(--font-ui)",

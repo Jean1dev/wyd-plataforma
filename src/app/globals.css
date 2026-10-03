@@ -8,15 +8,18 @@
    ============================================================ */
 
 :root {
-  /* ---- Base: Obsidian / Iron (dark structural surfaces) ---- */
-  --obsidian-900: #0a0805;
-  --obsidian-800: #14110c;
-  --obsidian-700: #1d1812;
-  --obsidian-600: #29221a;
-  --obsidian-500: #382e22;
-  --iron-400:     #4d4030;
-  --iron-300:     #6b5a44;
-  --iron-200:     #8a7659;
+  /* ---- Base: Obsidian / Iron (dark structural surfaces) ----
+     Cold blue-black night palette. Token names are kept from the original
+     warm theme on purpose: ~650 inline styles (mostly admin) reference
+     them, so re-theming happens here, by value. */
+  --obsidian-900: #06090f;
+  --obsidian-800: #0a1019;
+  --obsidian-700: #0f1622;
+  --obsidian-600: #151d2b;
+  --obsidian-500: #1f293a;
+  --iron-400:     #2f3b4f;
+  --iron-300:     #5d6b82;
+  --iron-200:     #93a0b5;
 
   /* ---- Parchment (lore / content / light surfaces) ---- */
   --parchment-50:  #f6eed9;
@@ -32,6 +35,8 @@
   --gold-500: #c8a35b;
   --gold-400: #dcbd7e;
   --gold-300: #ecd6a4;
+  --gold-200: #f3e3bd;
+  --gold-100: #fff3d6;
 
   /* ---- Steel Blue ---- */
   --steel-700: #2c4a5c;
@@ -66,7 +71,7 @@
   --surface-card:      var(--obsidian-600);
   --surface-inset:     var(--obsidian-900);
   --surface-parchment: var(--parchment-100);
-  --surface-overlay:   rgba(10, 8, 5, 0.78);
+  --surface-overlay:   rgba(4, 7, 12, 0.82);
 
   /* Borders */
   --border-subtle:  var(--iron-400);
@@ -211,24 +216,27 @@
   --shadow-xl:  0 24px 60px rgba(0,0,0,0.7);
 
   /* Inner bevel */
-  --bevel-in:    inset 0 1px 0 rgba(255,235,190,0.07), inset 0 -2px 4px rgba(0,0,0,0.45);
-  --bevel-raise: inset 0 1px 0 rgba(255,235,190,0.14), 0 2px 6px rgba(0,0,0,0.5);
+  --bevel-in:    inset 0 2px 6px rgba(0,0,0,0.65), inset 0 -1px 0 rgba(190,210,240,0.06);
+  --bevel-raise: inset 0 1px 0 rgba(210,225,250,0.10), 0 2px 6px rgba(0,0,0,0.5);
 
   /* Glows */
   --glow-gold:  0 0 0 1px var(--gold-600), 0 0 14px rgba(200,163,91,0.45);
   --glow-steel: 0 0 0 1px var(--steel-600), 0 0 14px rgba(91,143,176,0.5);
   --glow-blood: 0 0 0 1px var(--blood-600), 0 0 14px rgba(176,58,54,0.5);
-  --focus-ring: 0 0 0 2px var(--obsidian-900), 0 0 0 4px var(--steel-500);
+  --focus-ring: 0 0 0 2px var(--obsidian-900), 0 0 0 4px var(--gold-500);
 
   /* Gradients */
   --grad-gold:   linear-gradient(180deg, var(--gold-400) 0%, var(--gold-600) 52%, var(--gold-700) 53%, var(--gold-500) 100%);
   --grad-steel:  linear-gradient(180deg, var(--steel-400) 0%, var(--steel-600) 52%, var(--steel-700) 53%, var(--steel-500) 100%);
   --grad-iron:   linear-gradient(180deg, var(--obsidian-500) 0%, var(--obsidian-700) 100%);
   --grad-panel:  linear-gradient(180deg, var(--obsidian-600) 0%, var(--obsidian-800) 100%);
+  --grad-title:  linear-gradient(180deg, #fff3d6 0%, #d9b77b 55%, #9c7442 100%);
+  --grad-metal:  linear-gradient(180deg, #a3aec2 0%, #4b576b 22%, #1a212d 48%, #39445a 74%, #8f9ab0 100%);
+  --grad-bronze: linear-gradient(180deg, #5a3b20 0%, #3a2414 45%, #2a190d 55%, #4a2f19 100%);
   --grad-blood:  linear-gradient(180deg, var(--blood-500) 0%, var(--blood-700) 100%);
 
   /* Vignette */
-  --vignette: radial-gradient(120% 100% at 50% 0%, transparent 40%, rgba(10,8,5,0.85) 100%);
+  --vignette: radial-gradient(120% 100% at 50% 0%, transparent 40%, rgba(4,7,12,0.88) 100%);
 
   /* Motion */
   --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
@@ -297,18 +305,37 @@
 }
 
 /* ============================================================
-   Base resets & atmosphere (from base.css)
+   Ornament sprites (inline SVG data URIs — no asset dependency)
+   ============================================================ */
+:root {
+  --corner-tl: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Cg fill='none' stroke='%23c8a35b'%3E%3Cpath d='M1.5 28.5V9.5l8-8h19' stroke-width='1.6'/%3E%3Cpath d='M5.5 22V11.2l5.7-5.7H22' stroke-opacity='.45'/%3E%3C/g%3E%3Cpath d='M6 1.2l4.8 4.8L6 10.8 1.2 6z' fill='%23ecd6a4' stroke='%236e521f' stroke-width='.8'/%3E%3C/svg%3E");
+  --corner-tr: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Cg transform='matrix(-1 0 0 1 30 0)'%3E%3Cg fill='none' stroke='%23c8a35b'%3E%3Cpath d='M1.5 28.5V9.5l8-8h19' stroke-width='1.6'/%3E%3Cpath d='M5.5 22V11.2l5.7-5.7H22' stroke-opacity='.45'/%3E%3C/g%3E%3Cpath d='M6 1.2l4.8 4.8L6 10.8 1.2 6z' fill='%23ecd6a4' stroke='%236e521f' stroke-width='.8'/%3E%3C/g%3E%3C/svg%3E");
+  --corner-bl: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Cg transform='matrix(1 0 0 -1 0 30)'%3E%3Cg fill='none' stroke='%23c8a35b'%3E%3Cpath d='M1.5 28.5V9.5l8-8h19' stroke-width='1.6'/%3E%3Cpath d='M5.5 22V11.2l5.7-5.7H22' stroke-opacity='.45'/%3E%3C/g%3E%3Cpath d='M6 1.2l4.8 4.8L6 10.8 1.2 6z' fill='%23ecd6a4' stroke='%236e521f' stroke-width='.8'/%3E%3C/g%3E%3C/svg%3E");
+  --corner-br: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Cg transform='matrix(-1 0 0 -1 30 30)'%3E%3Cg fill='none' stroke='%23c8a35b'%3E%3Cpath d='M1.5 28.5V9.5l8-8h19' stroke-width='1.6'/%3E%3Cpath d='M5.5 22V11.2l5.7-5.7H22' stroke-opacity='.45'/%3E%3C/g%3E%3Cpath d='M6 1.2l4.8 4.8L6 10.8 1.2 6z' fill='%23ecd6a4' stroke='%236e521f' stroke-width='.8'/%3E%3C/g%3E%3C/svg%3E");
+  --cap-l: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='24' viewBox='0 0 12 24'%3E%3Cpath d='M10 2.5C4.5 3 2 7 2 12s2.5 9 8 9.5' fill='none' stroke='%2393a0b5' stroke-width='1.6'/%3E%3Cpath d='M9 7.5C6.5 8 5.5 10 5.5 12s1 4 3.5 4.5' fill='none' stroke='%23c8a35b' stroke-width='1.2'/%3E%3Ccircle cx='9' cy='12' r='1.6' fill='%23ecd6a4'/%3E%3C/svg%3E");
+  --cap-r: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='24' viewBox='0 0 12 24'%3E%3Cg transform='matrix(-1 0 0 1 12 0)'%3E%3Cpath d='M10 2.5C4.5 3 2 7 2 12s2.5 9 8 9.5' fill='none' stroke='%2393a0b5' stroke-width='1.6'/%3E%3Cpath d='M9 7.5C6.5 8 5.5 10 5.5 12s1 4 3.5 4.5' fill='none' stroke='%23c8a35b' stroke-width='1.2'/%3E%3Ccircle cx='9' cy='12' r='1.6' fill='%23ecd6a4'/%3E%3C/g%3E%3C/svg%3E");
+  --horn: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='30' viewBox='0 0 44 30'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23f2ece0'/%3E%3Cstop offset='.55' stop-color='%23b9b2a3'/%3E%3Cstop offset='1' stop-color='%23605a50'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M44 11C30 12 14 10 1 1.5 9 14 24 21 44 21z' fill='url(%23g)' stroke='%23332e27' stroke-width='.8'/%3E%3C/svg%3E");
+  --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* Overridden from layout.tsx when an AI-generated texture is configured
+     in src/lib/portal-assets.ts. */
+  --panel-texture: none;
+}
+
+/* ============================================================
+   Base resets & atmosphere
    ============================================================ */
 
 *, *::before, *::after { box-sizing: border-box; }
 
 body {
   margin: 0;
+  min-height: 100vh;
   background-color: var(--surface-base);
   background-image:
-    radial-gradient(1px 1px at 20% 30%, rgba(255,235,190,0.025), transparent 60%),
-    radial-gradient(1px 1px at 70% 60%, rgba(255,235,190,0.02), transparent 60%),
-    radial-gradient(1200px 600px at 50% -10%, rgba(91,143,176,0.06), transparent 70%);
+    var(--noise),
+    radial-gradient(1400px 700px at 50% -15%, rgba(91,143,176,0.10), transparent 70%),
+    radial-gradient(900px 500px at 100% 100%, rgba(200,163,91,0.04), transparent 70%);
+  background-attachment: fixed;
   color: var(--text-body);
   font: var(--type-body);
   -webkit-font-smoothing: antialiased;
@@ -327,6 +354,8 @@ a:hover { color: var(--link-hover); }
 
 ::selection { background: var(--gold-600); color: var(--obsidian-900); }
 
+:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 2px; }
+
 /* Themed scrollbar */
 * { scrollbar-width: thin; scrollbar-color: var(--iron-400) transparent; }
 *::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -337,7 +366,76 @@ a:hover { color: var(--link-hover); }
 }
 *::-webkit-scrollbar-thumb:hover { background: var(--iron-300); }
 
-/* ---- Reusable atmosphere helpers ---- */
+/* ============================================================
+   Typography helpers
+   ============================================================ */
+
+/* Gold-leaf title: gradient clipped to the glyphs. drop-shadow (not
+   text-shadow) because text-shadow would paint over the clipped fill. */
+.wyd-title-gold {
+  background: var(--grad-title);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.85));
+}
+
+.wyd-eyebrow {
+  font-family: var(--font-ui); text-transform: uppercase;
+  letter-spacing: var(--tracking-widest); font-size: var(--text-xs);
+  font-weight: var(--weight-medium); color: var(--gold-500);
+}
+
+.wyd-divider {
+  display: flex; align-items: center; gap: var(--space-3);
+  color: var(--gold-600);
+}
+.wyd-divider::before, .wyd-divider::after {
+  content: ""; flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-700), transparent);
+}
+.wyd-divider span {
+  font-family: var(--font-ui); text-transform: uppercase;
+  letter-spacing: var(--tracking-widest); font-size: var(--text-xs);
+}
+.wyd-divider--gem::before { background: linear-gradient(90deg, transparent, var(--gold-600)); }
+.wyd-divider--gem::after  { background: linear-gradient(90deg, var(--gold-600), transparent); }
+.wyd-divider--gem span {
+  width: 9px; height: 9px; transform: rotate(45deg);
+  background: var(--gold-300); box-shadow: 0 0 8px rgba(236,214,164,0.6);
+}
+
+/* Page container + heading block shared by every player page. */
+.wyd-container { max-width: 1240px; margin: 0 auto; padding: 36px 24px 80px; }
+.wyd-container--narrow { max-width: 1040px; }
+
+.wyd-page-head { margin-bottom: 28px; }
+.wyd-page-head .wyd-eyebrow { margin-bottom: 8px; }
+.wyd-page-head h1 {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(30px, 5vw, 42px); letter-spacing: 0.02em; line-height: 1.1;
+}
+.wyd-page-head p {
+  font-family: var(--font-body); font-size: 16px; color: var(--parchment-200);
+  max-width: 620px; margin: 10px 0 0; text-wrap: pretty;
+}
+.wyd-page-head .wyd-divider { max-width: 260px; margin-top: 14px; }
+
+.wyd-section-title {
+  font-family: var(--font-display); font-weight: 700; font-size: 20px;
+  letter-spacing: 0.04em; margin: 0 0 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.wyd-section-title::after {
+  content: ""; flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--gold-700), transparent);
+}
+
+.wyd-muted { color: var(--text-muted); font-family: var(--font-body); font-size: 14px; }
+
+/* ============================================================
+   Surfaces
+   ============================================================ */
 
 .wyd-parchment {
   background-color: var(--surface-parchment);
@@ -349,23 +447,128 @@ a:hover { color: var(--link-hover); }
   border-radius: var(--radius-md);
 }
 
-.wyd-divider {
-  display: flex; align-items: center; gap: var(--space-3);
-  color: var(--gold-600);
-}
-.wyd-divider::before, .wyd-divider::after {
-  content: ""; flex: 1; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--gold-600), transparent);
-}
-.wyd-divider span {
-  font-family: var(--font-ui); text-transform: uppercase;
-  letter-spacing: var(--tracking-widest); font-size: var(--text-xs);
+/* Plain panel: metal hairline, no ornaments. Used by admin screens too. */
+.wyd-panel {
+  background: var(--panel-texture), var(--grad-panel);
+  border: 1px solid var(--iron-400);
+  border-radius: var(--radius-md);
+  box-shadow: var(--bevel-raise), var(--shadow-md);
 }
 
-.wyd-eyebrow {
-  font-family: var(--font-ui); text-transform: uppercase;
-  letter-spacing: var(--tracking-widest); font-size: var(--text-xs);
-  font-weight: var(--weight-medium); color: var(--gold-500);
+/* Ornate frame: brushed-steel border (gradient on border-box), inner
+   shadow well and gold filigree in the four corners. */
+.wyd-frame {
+  position: relative;
+  border: 3px solid transparent;
+  border-radius: 6px;
+  background:
+    var(--panel-texture) padding-box,
+    linear-gradient(180deg, rgba(31,41,58,0.65) 0%, rgba(10,16,25,0.96) 60%) padding-box,
+    var(--grad-metal) border-box;
+  box-shadow:
+    0 0 0 1px #000,
+    inset 0 0 0 1px rgba(0,0,0,0.9),
+    inset 0 0 0 2px rgba(160,175,200,0.08),
+    inset 0 0 48px rgba(0,0,0,0.55),
+    0 22px 48px rgba(0,0,0,0.55);
+  padding: 22px;
+}
+.wyd-frame::before {
+  content: "";
+  position: absolute; inset: 3px;
+  pointer-events: none;
+  background:
+    var(--corner-tl) top left / 26px 26px no-repeat,
+    var(--corner-tr) top right / 26px 26px no-repeat,
+    var(--corner-bl) bottom left / 26px 26px no-repeat,
+    var(--corner-br) bottom right / 26px 26px no-repeat;
+  opacity: 0.9;
+}
+.wyd-frame > * { position: relative; }
+.wyd-frame--lg { padding: 32px; }
+.wyd-frame--sm { padding: 16px; }
+.wyd-frame--flush { padding: 0; overflow: hidden; }
+.wyd-frame--flush::before { z-index: 2; }
+
+/* Gold variant for the highlighted card in a set. */
+.wyd-frame--gold {
+  background:
+    var(--panel-texture) padding-box,
+    linear-gradient(180deg, rgba(60,46,22,0.40) 0%, rgba(10,16,25,0.96) 65%) padding-box,
+    linear-gradient(180deg, #f3e3bd 0%, #a87f33 25%, #4a3412 50%, #8a6829 75%, #ecd6a4 100%) border-box;
+  box-shadow:
+    0 0 0 1px #000,
+    inset 0 0 0 1px rgba(0,0,0,0.9),
+    inset 0 0 48px rgba(0,0,0,0.5),
+    0 0 26px rgba(200,163,91,0.18),
+    0 22px 48px rgba(0,0,0,0.55);
+}
+
+/* Crest variant: room above the content for the winged crest. */
+.wyd-frame--crest { margin-top: 46px; padding-top: 58px; }
+.wyd-crest {
+  position: absolute !important;
+  left: 50%; top: -58px; transform: translateX(-50%);
+  width: 240px; height: auto; max-width: 80%;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,0.75));
+}
+
+/* Inventory-style slot for items. */
+.wyd-slot {
+  position: relative;
+  display: grid; place-items: center; gap: 6px;
+  min-height: 104px; padding: 12px;
+  border-radius: 4px;
+  border: 1px solid #000;
+  background:
+    radial-gradient(70% 70% at 50% 45%, rgba(91,143,176,0.12), transparent 70%),
+    linear-gradient(180deg, #070b12, #0d141f);
+  box-shadow:
+    inset 0 0 0 1px rgba(147,160,181,0.18),
+    inset 0 3px 10px rgba(0,0,0,0.8);
+  color: var(--gold-300);
+}
+.wyd-slot--glow {
+  box-shadow:
+    inset 0 0 0 1px rgba(236,214,164,0.55),
+    inset 0 3px 10px rgba(0,0,0,0.8),
+    0 0 16px rgba(200,163,91,0.35);
+}
+
+/* Card used in shop / rewards grids: frame + hover lift. */
+.wyd-card {
+  display: flex; flex-direction: column; gap: 14px;
+  transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+}
+.wyd-card:hover { transform: translateY(-3px); }
+.wyd-card--dim { opacity: 0.5; filter: saturate(0.6); }
+.wyd-card--dim:hover { transform: none; }
+
+/* Attribute / mini stat cells */
+.wyd-cell {
+  border: 1px solid var(--iron-400);
+  border-radius: 4px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.025), rgba(0,0,0,0.2));
+  box-shadow: inset 0 1px 0 rgba(210,225,250,0.05);
+  padding: 9px 12px;
+}
+.wyd-cell__label {
+  font-family: var(--font-ui); font-size: 11px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-faint);
+}
+.wyd-cell__value {
+  margin-top: 4px; font-family: var(--font-display); font-size: 18px;
+  font-weight: 700; color: var(--parchment-100); line-height: 1.1;
+}
+
+.wyd-alert {
+  border: 1px solid rgba(203,90,82,0.55);
+  background: linear-gradient(180deg, rgba(94,26,28,0.45), rgba(69,19,20,0.35));
+  border-radius: 4px;
+  color: #ffd9d2;
+  font-family: var(--font-body); font-size: 13px;
+  padding: 10px 12px;
 }
 
 /* Screen entrance — short rise + fade, honoring reduced-motion */
@@ -375,26 +578,21 @@ a:hover { color: var(--link-hover); }
   to   { opacity: 1; transform: none; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
-  .wyd-screen { animation: none; }
-}
-
 /* ============================================================
-   Component interaction states
-   (hover / press / focus can't be expressed with inline styles)
+   Buttons
    ============================================================ */
-
-/* ---- Button ---- */
 .wyd-btn {
+  position: relative;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   font-family: var(--font-ui); font-weight: 600;
   text-transform: uppercase; letter-spacing: var(--tracking-wide);
-  border-radius: var(--radius-md); border: 1px solid transparent;
+  border-radius: var(--radius-sm); border: 1px solid transparent;
   cursor: pointer; text-decoration: none; white-space: nowrap;
   transition: transform var(--dur-fast) var(--ease-snap),
     box-shadow var(--dur-fast) var(--ease-out),
-    filter var(--dur-fast) var(--ease-out);
+    filter var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
 }
 .wyd-btn--sm { padding: 7px 14px; font-size: var(--text-xs); }
 .wyd-btn--md { padding: 11px 20px; font-size: var(--text-sm); }
@@ -403,23 +601,76 @@ a:hover { color: var(--link-hover); }
 
 .wyd-btn--primary {
   background: var(--grad-gold); color: var(--obsidian-900);
-  border-color: var(--gold-700); box-shadow: var(--bevel-raise);
+  border-color: #000;
+  box-shadow: inset 0 1px 0 rgba(255,243,214,0.6), inset 0 0 0 1px rgba(110,82,31,0.6), 0 2px 8px rgba(0,0,0,0.6);
+  text-shadow: 0 1px 0 rgba(255,243,214,0.4);
 }
 .wyd-btn--steel {
-  background: var(--grad-steel); color: var(--obsidian-900);
-  border-color: var(--steel-700); box-shadow: var(--bevel-raise);
+  background: var(--grad-metal); color: var(--parchment-50);
+  border-color: #000;
+  box-shadow: inset 0 1px 0 rgba(220,230,245,0.35), 0 2px 8px rgba(0,0,0,0.6);
+  text-shadow: 0 1px 2px #000;
 }
 .wyd-btn--ghost {
-  background: transparent; color: var(--gold-300);
+  background: linear-gradient(180deg, rgba(31,41,58,0.5), rgba(6,9,15,0.6));
+  color: var(--gold-300);
   border-color: var(--iron-300);
 }
-.wyd-btn:not(:disabled):hover { filter: brightness(1.08); box-shadow: var(--bevel-raise), var(--shadow-md); }
+
+/* Heavy call-to-action: dark bronze bar with steel end caps and bone
+   horns (pure CSS/SVG). Use for the one main action of a screen. */
+.wyd-btn--cta {
+  font-family: var(--font-display); font-weight: 700; letter-spacing: 0.08em;
+  color: var(--gold-200);
+  text-shadow: 0 1px 0 #000, 0 0 10px rgba(236,214,164,0.35);
+  border-color: #000;
+  border-radius: 3px;
+  background:
+    var(--grad-metal) left / 9px 100% no-repeat,
+    var(--grad-metal) right / 9px 100% no-repeat,
+    repeating-linear-gradient(92deg, rgba(0,0,0,0) 0 14px, rgba(0,0,0,0.12) 14px 15px),
+    var(--grad-bronze);
+  box-shadow:
+    inset 0 1px 0 rgba(255,220,170,0.25),
+    inset 0 -2px 6px rgba(0,0,0,0.6),
+    0 0 0 1px rgba(200,163,91,0.25),
+    0 6px 16px rgba(0,0,0,0.6);
+  padding-inline: 34px;
+}
+.wyd-btn--cta::before, .wyd-btn--cta::after {
+  content: ""; position: absolute; top: 50%;
+  width: 40px; height: 28px; margin-top: -16px;
+  background: var(--horn) center / contain no-repeat;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.7));
+}
+.wyd-btn--cta::before { right: 100%; margin-right: -6px; }
+.wyd-btn--cta::after  { left: 100%; margin-left: -6px; transform: scaleX(-1); }
+.wyd-btn--cta.wyd-btn--block { width: auto; margin-inline: 30px; }
+.wyd-btn--cta.wyd-btn--sm { padding-inline: 20px; }
+.wyd-btn--cta.wyd-btn--sm::before, .wyd-btn--cta.wyd-btn--sm::after { width: 22px; height: 16px; margin-top: -9px; }
+.wyd-btn--cta:not(:disabled):hover { color: var(--gold-100); filter: brightness(1.15); }
+
+.wyd-btn:not(:disabled):hover { filter: brightness(1.1); }
 .wyd-btn--ghost:not(:disabled):hover { border-color: var(--gold-600); color: var(--gold-200); box-shadow: var(--glow-gold); }
-.wyd-btn:not(:disabled):active { transform: translateY(1px); box-shadow: var(--bevel-in); }
+.wyd-btn:not(:disabled):active { transform: translateY(1px); }
 .wyd-btn:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.3); }
 .wyd-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
-/* ---- Input ---- */
+/* ============================================================
+   Form controls
+   ============================================================ */
+.wyd-field { display: flex; flex-direction: column; gap: 7px; }
+.wyd-field__label {
+  font-family: var(--font-ui); font-size: var(--text-xs); font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted);
+}
+.wyd-field--ornate .wyd-field__label {
+  font-family: var(--font-display); font-size: 13px; font-weight: 600;
+  letter-spacing: 0.08em; color: var(--parchment-200); text-transform: none;
+  font-variant: small-caps;
+}
+
 .wyd-input {
   width: 100%; font-family: var(--font-body); font-size: var(--text-base);
   color: var(--parchment-100); background: var(--surface-inset);
@@ -428,7 +679,284 @@ a:hover { color: var(--link-hover); }
   transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
 .wyd-input::placeholder { color: var(--text-faint); }
-.wyd-input:focus { outline: none; border-color: var(--steel-600); box-shadow: var(--bevel-in), var(--glow-steel); }
+.wyd-input:focus { outline: none; border-color: var(--gold-700); box-shadow: var(--bevel-in), var(--glow-gold); }
 
-/* ---- Nav / tab buttons (used inline in client components) ---- */
-.wyd-navlink:hover { color: var(--gold-300); }
+/* Ornate input: steel rim + scroll end caps, as on the login frame. */
+.wyd-input--ornate {
+  border: 2px solid transparent;
+  border-radius: 4px;
+  padding: 12px 30px;
+  background:
+    var(--cap-l) left 7px center / 11px 22px no-repeat,
+    var(--cap-r) right 7px center / 11px 22px no-repeat,
+    linear-gradient(180deg, #05080d, #0b111b) padding-box,
+    var(--grad-metal) border-box;
+  box-shadow: 0 0 0 1px #000, inset 0 3px 8px rgba(0,0,0,0.8);
+}
+.wyd-input--ornate:focus {
+  border-color: transparent;
+  box-shadow: 0 0 0 1px #000, inset 0 3px 8px rgba(0,0,0,0.8), 0 0 0 3px rgba(200,163,91,0.35), 0 0 16px rgba(200,163,91,0.3);
+}
+
+/* Underlined tabs (auth, filters). */
+.wyd-tabs {
+  display: flex; justify-content: center; gap: 28px;
+  border-bottom: 1px solid var(--iron-400);
+}
+.wyd-tab {
+  background: transparent; border: none; cursor: pointer;
+  padding: 10px 2px; margin-bottom: -1px;
+  font-family: var(--font-display); font-weight: 600; font-size: 15px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.wyd-tab:hover { color: var(--parchment-100); }
+.wyd-tab[aria-selected="true"] { color: var(--gold-300); border-bottom-color: var(--gold-500); }
+
+/* ============================================================
+   Top navigation
+   ============================================================ */
+.wyd-topnav {
+  position: sticky; top: 0; z-index: var(--z-sticky);
+  background: linear-gradient(180deg, rgba(6,9,15,0.96), rgba(10,16,25,0.88));
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+}
+.wyd-topnav::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-700) 20%, var(--gold-400) 50%, var(--gold-700) 80%, transparent);
+}
+.wyd-topnav__inner {
+  max-width: 1320px; margin: 0 auto; padding: 0 24px;
+  min-height: 68px; display: flex; align-items: center; gap: 22px;
+}
+.wyd-topnav__brand { display: flex; align-items: center; gap: 10px; padding: 10px 0; flex: none; }
+.wyd-topnav__brand span {
+  font-family: var(--font-ui); font-size: 11px; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--gold-500);
+}
+.wyd-topnav__links { display: flex; align-items: center; gap: 2px; flex: 1; min-width: 0; }
+.wyd-navlink {
+  position: relative;
+  padding: 10px 13px;
+  font-family: var(--font-display); font-size: 13px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--iron-200);
+}
+.wyd-navlink:hover { color: var(--gold-200); }
+.wyd-navlink[aria-current="page"] { color: var(--gold-300); }
+.wyd-navlink[aria-current="page"]::after {
+  content: ""; position: absolute; left: 13px; right: 13px; bottom: 2px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold-400), transparent);
+  box-shadow: 0 0 8px rgba(200,163,91,0.6);
+}
+
+/* <details> menus (admin dropdown + mobile hamburger) */
+.wyd-menu { position: relative; }
+.wyd-menu > summary { list-style: none; cursor: pointer; user-select: none; }
+.wyd-menu > summary::-webkit-details-marker { display: none; }
+.wyd-menu__caret { display: inline-block; margin-left: 6px; font-size: 9px; transition: transform var(--dur-fast); }
+.wyd-menu[open] .wyd-menu__caret { transform: rotate(180deg); }
+.wyd-menu__panel {
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: var(--z-overlay);
+  min-width: 240px; padding: 8px;
+  display: flex; flex-direction: column;
+  border: 2px solid transparent; border-radius: 5px;
+  background: linear-gradient(180deg, #111926, #070b12) padding-box, var(--grad-metal) border-box;
+  box-shadow: 0 0 0 1px #000, 0 18px 40px rgba(0,0,0,0.7);
+}
+.wyd-menu__panel .wyd-navlink { padding: 9px 12px; border-radius: 3px; font-size: 12px; }
+.wyd-menu__panel .wyd-navlink:hover { background: rgba(200,163,91,0.08); }
+.wyd-menu__panel .wyd-navlink[aria-current="page"]::after { display: none; }
+.wyd-menu__panel .wyd-navlink[aria-current="page"] { background: rgba(200,163,91,0.12); }
+.wyd-menu__heading {
+  padding: 10px 12px 4px; font-family: var(--font-ui); font-size: 10px;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold-600);
+}
+
+.wyd-topnav__burger { display: none; }
+.wyd-topnav__burger > summary {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 4px;
+  border: 1px solid var(--iron-400); color: var(--gold-300);
+}
+.wyd-topnav__burger .wyd-menu__panel { left: auto; right: 0; max-height: 75vh; overflow-y: auto; }
+
+.wyd-topnav__right { display: flex; align-items: center; gap: 14px; padding: 10px 0; flex: none; }
+.wyd-balance {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 13px;
+  background: linear-gradient(180deg, #05080d, #0b111b);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--gold-700);
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.7), 0 0 10px rgba(200,163,91,0.12);
+  font-family: var(--font-mono); font-size: 14px; font-weight: 500; color: var(--gold-300);
+}
+.wyd-balance__gem { color: var(--gold-400); font-size: 14px; }
+.wyd-user { display: flex; align-items: center; gap: 9px; }
+.wyd-user__name { font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--parchment-100); }
+.wyd-user__status {
+  font-family: var(--font-ui); font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--emerald-400);
+}
+.wyd-icon-btn {
+  background: transparent; border: 1px solid var(--iron-400); border-radius: var(--radius-sm);
+  color: var(--text-muted); cursor: pointer; padding: 7px 10px;
+  font-family: var(--font-ui); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  transition: color var(--dur-fast), border-color var(--dur-fast);
+}
+.wyd-icon-btn:hover { color: var(--gold-200); border-color: var(--gold-700); }
+
+/* ============================================================
+   Footer
+   ============================================================ */
+.wyd-footer {
+  position: relative; margin-top: 40px;
+  border-top: 1px solid var(--iron-400);
+  background: linear-gradient(180deg, rgba(6,9,15,0.2), rgba(6,9,15,0.9));
+}
+.wyd-footer__inner {
+  max-width: 1320px; margin: 0 auto; padding: 28px 24px 36px;
+  display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap;
+}
+.wyd-footer__tag {
+  font-family: var(--font-ui); font-size: 11px; letter-spacing: 0.24em;
+  text-transform: uppercase; color: var(--iron-200);
+  display: flex; align-items: center; gap: 14px;
+}
+.wyd-footer__tag i { width: 1px; height: 12px; background: var(--iron-300); }
+.wyd-footer__links { display: flex; gap: 18px; font-family: var(--font-ui); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; }
+.wyd-footer__links a { color: var(--iron-200); }
+.wyd-footer__links a:hover { color: var(--gold-300); }
+
+/* ============================================================
+   Hero banners (dashboard) and auth split screen
+   ============================================================ */
+.wyd-hero {
+  position: relative; overflow: hidden;
+  min-height: 300px; display: flex; align-items: flex-end;
+  margin-bottom: 30px;
+}
+.wyd-hero__art { object-fit: cover; object-position: center 30%; }
+.wyd-hero__shade {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(90deg, rgba(6,9,15,0.95) 0%, rgba(6,9,15,0.75) 35%, rgba(6,9,15,0.15) 75%),
+    linear-gradient(0deg, rgba(6,9,15,0.9) 0%, transparent 50%);
+}
+.wyd-hero__body { position: relative; padding: 40px; max-width: 720px; }
+.wyd-hero__title {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(34px, 6vw, 54px); line-height: 1.05; letter-spacing: 0.02em;
+  font-variant: small-caps; color: #f1ece3;
+  text-shadow: 0 3px 18px rgba(0,0,0,0.9);
+  margin: 6px 0 12px;
+}
+.wyd-hero__lead {
+  font-family: var(--font-body); font-size: 16px; color: var(--parchment-200);
+  margin: 0 0 22px; text-wrap: pretty; text-shadow: 0 1px 8px #000;
+}
+
+.wyd-auth {
+  min-height: 100vh;
+  display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  background: var(--obsidian-800);
+}
+.wyd-auth__art { position: relative; overflow: hidden; min-height: 100vh; }
+.wyd-auth__art img { object-fit: cover; object-position: center; }
+.wyd-auth__art-shade {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(90deg, rgba(6,9,15,0.15) 0%, rgba(6,9,15,0.25) 70%, rgba(10,16,25,1) 100%),
+    linear-gradient(0deg, rgba(6,9,15,0.9) 0%, rgba(6,9,15,0.1) 45%, rgba(6,9,15,0.35) 100%);
+}
+.wyd-auth__brand {
+  position: absolute; top: 28px; left: 40px; z-index: 2;
+  display: flex; align-items: center; gap: 12px;
+}
+.wyd-auth__brand span {
+  font-family: var(--font-display); font-size: 20px; letter-spacing: 0.3em;
+  color: #f1ece3; text-shadow: 0 2px 10px #000;
+}
+.wyd-auth__pitch { position: absolute; left: 40px; right: 40px; bottom: 44px; z-index: 2; max-width: 520px; }
+.wyd-auth__pitch p {
+  font-family: var(--font-body); font-size: 16px; color: var(--parchment-100);
+  margin: 0 0 6px; text-shadow: 0 1px 8px #000;
+}
+.wyd-auth__sig {
+  margin-top: 28px; display: flex; gap: 16px; align-items: center;
+  font-family: var(--font-ui); font-size: 10px; letter-spacing: 0.28em;
+  text-transform: uppercase; color: var(--iron-200);
+}
+.wyd-auth__sig i { width: 1px; height: 12px; background: var(--iron-300); }
+.wyd-auth__panel {
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  padding: 40px 32px;
+  background:
+    radial-gradient(700px 500px at 50% 30%, rgba(91,143,176,0.07), transparent 70%),
+    var(--obsidian-800);
+}
+.wyd-auth__card { width: 100%; max-width: 460px; }
+.wyd-auth__title {
+  text-align: center; font-family: var(--font-display); font-weight: 700;
+  font-size: 26px; letter-spacing: 0.06em; font-variant: small-caps;
+  margin-bottom: 14px;
+}
+
+/* ============================================================
+   Rankings
+   ============================================================ */
+.wyd-rank-row { border-radius: 3px; transition: background var(--dur-fast); }
+.wyd-rank-row:hover { background: rgba(200,163,91,0.05); }
+.wyd-rank-row + .wyd-rank-row { border-top: 1px solid rgba(47,59,79,0.55); }
+.wyd-medal {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 14px; color: #1a1206;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), inset 0 -2px 3px rgba(0,0,0,0.35), 0 0 10px var(--medal-glow, transparent);
+}
+.wyd-medal--1 { background: radial-gradient(circle at 35% 30%, #fff3d6, #dcbd7e 45%, #8a6829); --medal-glow: rgba(220,189,126,0.55); }
+.wyd-medal--2 { background: radial-gradient(circle at 35% 30%, #ffffff, #b9c3d3 45%, #5d6b82); --medal-glow: rgba(185,195,211,0.45); }
+.wyd-medal--3 { background: radial-gradient(circle at 35% 30%, #ffe1c2, #c0834f 45%, #6b3d1b); --medal-glow: rgba(192,131,79,0.45); }
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 1240px) {
+  .wyd-topnav__right .wyd-user__meta, .wyd-topnav__brand span { display: none; }
+  .wyd-navlink { padding-inline: 9px; }
+}
+
+@media (max-width: 960px) {
+  .wyd-topnav__links { display: none; }
+  .wyd-topnav__burger { display: block; }
+  .wyd-topnav__inner { justify-content: space-between; }
+}
+
+@media (max-width: 900px) {
+  .wyd-auth { grid-template-columns: 1fr; position: relative; }
+  .wyd-auth__art { position: absolute; inset: 0; min-height: 0; }
+  .wyd-auth__art-shade { background: rgba(6,9,15,0.78); }
+  .wyd-auth__pitch { display: none; }
+  .wyd-auth__brand { top: 18px; left: 50%; transform: translateX(-50%); }
+  .wyd-auth__panel { position: relative; background: transparent; padding: 96px 16px 40px; }
+  .wyd-hero__body { padding: 28px 22px; }
+}
+
+@media (max-width: 560px) {
+  .wyd-container { padding: 24px 16px 64px; }
+  .wyd-topnav__inner { padding: 0 16px; gap: 10px; }
+  .wyd-topnav__right .wyd-user { display: none; }
+  .wyd-topnav__right { gap: 8px; }
+  .wyd-frame { padding: 18px 16px; }
+  .wyd-frame--crest { padding-top: 52px; }
+  .wyd-btn--cta.wyd-btn--block { margin-inline: 24px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  .wyd-screen { animation: none; }
+  .wyd-card:hover { transform: none; }
+}

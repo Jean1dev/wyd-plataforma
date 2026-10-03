@@ -7,6 +7,8 @@ import {
   JetBrains_Mono,
 } from "next/font/google";
 import "./globals.css";
+import type { CSSProperties } from "react";
+import { PORTAL_ASSETS } from "@/lib/portal-assets";
 
 const cinzel = Cinzel({
   variable: "--font-cinzel",
@@ -45,6 +47,10 @@ export const metadata: Metadata = {
     "Portal do servidor WYD. Crie sua conta, acompanhe rankings, baixe o cliente e resgate recompensas em Kersef.",
 };
 
+const artVars = (
+  PORTAL_ASSETS.panelTexture ? { "--panel-texture": `url("${PORTAL_ASSETS.panelTexture}")` } : {}
+) as CSSProperties;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -53,6 +59,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
+      style={artVars}
       className={`${cinzel.variable} ${cinzelDecorative.variable} ${spectral.variable} ${oswald.variable} ${jetbrainsMono.variable}`}
     >
       <body>{children}</body>

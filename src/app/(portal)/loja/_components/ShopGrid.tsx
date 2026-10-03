@@ -23,18 +23,14 @@ export function ShopGrid({ items, icons, iconPackVersion, initialBalance }: Prop
           alignItems: "center",
           gap: 16,
           flexWrap: "wrap",
-          padding: 18,
-          background: "var(--grad-panel)",
-          border: "1px solid var(--iron-400)",
-          borderRadius: "var(--radius-lg)",
-          boxShadow: "var(--bevel-raise), var(--shadow-md)",
         }}
+        className="wyd-frame wyd-frame--gold"
       >
         <div>
           <div className="wyd-eyebrow" style={{ marginBottom: 4 }}>
             Saldo atual
           </div>
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 28, color: "var(--gold-300)" }}>
+          <div className="wyd-title-gold" style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 30 }}>
             {formatDonate(balance)} Donate
           </div>
         </div>
@@ -43,7 +39,7 @@ export function ShopGrid({ items, icons, iconPackVersion, initialBalance }: Prop
             A entrega acontece no armazém da conta no próximo login. Mantenha espaço livre: se o armazém estiver
             cheio, o item pode ser perdido.
           </div>
-          <Button type="button" size="sm" onClick={() => setTopupOpen(true)}>
+          <Button type="button" variant="cta" size="sm" onClick={() => setTopupOpen(true)} style={{ alignSelf: "flex-start", marginInline: 24 }}>
             Recarregar créditos
           </Button>
         </div>
@@ -56,34 +52,10 @@ export function ShopGrid({ items, icons, iconPackVersion, initialBalance }: Prop
           Nenhuma oferta disponível no momento.
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))", gap: 20 }}>
           {items.map((it) => (
-            <div
-              key={it.id}
-              style={{
-                background: "var(--grad-panel)",
-                border: "1px solid var(--iron-400)",
-                borderRadius: "var(--radius-lg)",
-                boxShadow: "var(--bevel-raise), var(--shadow-md)",
-                padding: 18,
-                display: "flex",
-                flexDirection: "column",
-                gap: 12,
-              }}
-            >
-              <div
-                style={{
-                  minHeight: 92,
-                  padding: 10,
-                  borderRadius: "var(--radius-sm)",
-                  background: "var(--surface-inset)",
-                  boxShadow: "var(--bevel-in)",
-                  display: "grid",
-                  placeItems: "center",
-                  gap: 6,
-                  color: "var(--gold-300)",
-                }}
-              >
+            <div key={it.id} className="wyd-frame wyd-card">
+              <div className="wyd-slot">
                 <ItemIcon
                   item={icons[it.item_index]}
                   itemIndex={it.item_index}
@@ -101,10 +73,10 @@ export function ShopGrid({ items, icons, iconPackVersion, initialBalance }: Prop
               <div style={{ minHeight: 74 }}>
                 <div
                   style={{
-                    fontFamily: "var(--font-body)",
-                    fontSize: 15,
+                    fontFamily: "var(--font-display)",
+                    fontSize: 16,
                     fontWeight: 700,
-                    color: "var(--parchment-100)",
+                    color: "var(--parchment-50)",
                     marginBottom: 5,
                   }}
                 >

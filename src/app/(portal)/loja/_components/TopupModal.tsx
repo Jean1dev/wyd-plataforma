@@ -185,7 +185,8 @@ export function TopupModal({ onClose, onBalance }: Props) {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.62)",
+        background: "var(--surface-overlay)",
+        backdropFilter: "blur(3px)",
         display: "grid",
         placeItems: "center",
         padding: 16,
@@ -194,14 +195,10 @@ export function TopupModal({ onClose, onBalance }: Props) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        className="wyd-frame wyd-screen"
         style={{
           width: "100%",
           maxWidth: 480,
-          background: "var(--grad-panel)",
-          border: "1px solid var(--iron-400)",
-          borderRadius: "var(--radius-lg)",
-          boxShadow: "var(--bevel-raise), var(--shadow-md)",
-          padding: 22,
           display: "grid",
           gap: 16,
           maxHeight: "90vh",
@@ -209,7 +206,7 @@ export function TopupModal({ onClose, onBalance }: Props) {
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-          <h2 style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "var(--gold-300)", margin: 0 }}>
+          <h2 className="wyd-title-gold" style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 22, margin: 0 }}>
             Recarregar créditos
           </h2>
           <Button type="button" size="sm" variant="ghost" onClick={onClose}>

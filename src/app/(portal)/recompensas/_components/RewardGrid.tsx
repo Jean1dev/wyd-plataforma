@@ -46,18 +46,14 @@ export function RewardGrid({
           alignItems: "center",
           gap: 16,
           flexWrap: "wrap",
-          padding: 18,
-          background: "var(--grad-panel)",
-          border: "1px solid var(--iron-400)",
-          borderRadius: "var(--radius-lg)",
-          boxShadow: "var(--bevel-raise), var(--shadow-md)",
         }}
+        className="wyd-frame wyd-frame--gold"
       >
         <div>
           <div className="wyd-eyebrow" style={{ marginBottom: 4 }}>
             Status de hoje
           </div>
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "var(--gold-300)" }}>
+          <div className="wyd-title-gold" style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 22 }}>
             {claimedToday ? `Resgatado: ${claimedItemTitle || "oferta removida"}` : "Você ainda não resgatou hoje"}
           </div>
         </div>
@@ -72,37 +68,21 @@ export function RewardGrid({
           Nenhuma oferta disponível no momento.
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 20 }}>
           {items.map((it) => {
             const isClaimedItem = claimedToday && it.id === claimedItemId;
             return (
               <div
                 key={it.id}
-                style={{
-                  background: "var(--grad-panel)",
-                  border: "1px solid var(--iron-400)",
-                  borderRadius: "var(--radius-lg)",
-                  boxShadow: "var(--bevel-raise), var(--shadow-md)",
-                  padding: 18,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 12,
-                  opacity: claimedToday && !isClaimedItem ? 0.55 : 1,
-                }}
+                className={[
+                  "wyd-frame wyd-card",
+                  isClaimedItem ? "wyd-frame--gold" : "",
+                  claimedToday && !isClaimedItem ? "wyd-card--dim" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
               >
-                <div
-                  style={{
-                    minHeight: 92,
-                    padding: 10,
-                    borderRadius: "var(--radius-sm)",
-                    background: "var(--surface-inset)",
-                    boxShadow: "var(--bevel-in)",
-                    display: "grid",
-                    placeItems: "center",
-                    gap: 6,
-                    color: "var(--gold-300)",
-                  }}
-                >
+                <div className={isClaimedItem ? "wyd-slot wyd-slot--glow" : "wyd-slot"}>
                   <ItemIcon
                     item={icons[it.item_index]}
                     itemIndex={it.item_index}
@@ -120,10 +100,10 @@ export function RewardGrid({
                 <div style={{ minHeight: 74 }}>
                   <div
                     style={{
-                      fontFamily: "var(--font-body)",
-                      fontSize: 15,
+                      fontFamily: "var(--font-display)",
+                      fontSize: 16,
                       fontWeight: 700,
-                      color: "var(--parchment-100)",
+                      color: "var(--parchment-50)",
                       marginBottom: 5,
                     }}
                   >

@@ -17,22 +17,6 @@ const errorMessages: Record<string, string> = {
   service_unavailable: "Servico indisponivel. Tente novamente em instantes.",
 };
 
-function tabStyle(active: boolean): React.CSSProperties {
-  return {
-    flex: 1,
-    background: "transparent",
-    border: "none",
-    cursor: "pointer",
-    padding: "10px 0",
-    fontFamily: "var(--font-display)",
-    fontWeight: 700,
-    fontSize: "16px",
-    color: active ? "var(--gold-400)" : "var(--text-faint)",
-    borderBottom: active ? "2px solid var(--gold-500)" : "2px solid transparent",
-    marginBottom: "-1px",
-  };
-}
-
 export function AuthTabs() {
   const [mode, setMode] = useState<Mode>("login");
   const [status, setStatus] = useState<FormStatus>("idle");
@@ -91,38 +75,24 @@ export function AuthTabs() {
   }
 
   return (
-    <div
-      style={{
-        background: "var(--grad-panel)",
-        border: "2px solid var(--gold-600)",
-        borderRadius: "var(--radius-lg)",
-        boxShadow: "var(--glow-gold), var(--shadow-xl)",
-        padding: 28,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          marginBottom: 22,
-          borderBottom: "1px solid var(--iron-400)",
-        }}
-      >
-        <button type="button" onClick={() => setMode("login")} style={tabStyle(!isRegister)}>
+    <div>
+      <div className="wyd-tabs" role="tablist" style={{ marginBottom: 22 }}>
+        <button type="button" role="tab" className="wyd-tab" aria-selected={!isRegister} onClick={() => setMode("login")}>
           Entrar
         </button>
-        <button type="button" onClick={() => setMode("register")} style={tabStyle(isRegister)}>
+        <button type="button" role="tab" className="wyd-tab" aria-selected={isRegister} onClick={() => setMode("register")}>
           Criar Conta
         </button>
       </div>
 
       <form onSubmit={enter} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <Input label="Usuario" name="name" placeholder="seu_login" autoComplete="username" required minLength={4} maxLength={12} pattern="[A-Za-z0-9]+" />
+        <Input ornate label="Usuario" name="name" placeholder="seu_login" autoComplete="username" required minLength={4} maxLength={12} pattern="[A-Za-z0-9]+" />
         {isRegister ? (
-          <Input label="E-mail" name="email" type="email" placeholder="voce@email.com" autoComplete="email" />
+          <Input ornate label="E-mail" name="email" type="email" placeholder="voce@email.com" autoComplete="email" />
         ) : null}
-        <Input label="Senha" name="password" type="password" placeholder="********" autoComplete={isRegister ? "new-password" : "current-password"} required minLength={4} />
+        <Input ornate label="Senha" name="password" type="password" placeholder="********" autoComplete={isRegister ? "new-password" : "current-password"} required minLength={4} />
         {isRegister ? (
-          <Input label="Confirmar Senha" name="passwordConfirm" type="password" placeholder="********" autoComplete="new-password" required minLength={4} />
+          <Input ornate label="Confirmar Senha" name="passwordConfirm" type="password" placeholder="********" autoComplete="new-password" required minLength={4} />
         ) : null}
 
         {isRegister ? (
@@ -137,29 +107,18 @@ export function AuthTabs() {
         )}
 
         {error ? (
-          <div
-            role="alert"
-            style={{
-              border: "1px solid rgba(199, 74, 74, 0.55)",
-              background: "rgba(88, 24, 24, 0.35)",
-              borderRadius: "var(--radius-sm)",
-              color: "#ffd6cf",
-              fontFamily: "var(--font-body)",
-              fontSize: 13,
-              padding: "10px 12px",
-            }}
-          >
+          <div role="alert" className="wyd-alert">
             {errorMessages[error] ?? errorMessages.service_unavailable}
           </div>
         ) : null}
 
-        <Button type="submit" size="lg" block disabled={status === "submitting"}>
+        <Button type="submit" variant="cta" size="lg" block disabled={status === "submitting"}>
           {status === "submitting" ? "Aguarde..." : isRegister ? "Forjar minha lenda" : "Entrar no Reino"}
         </Button>
         <div className="wyd-divider">
           <span>ou</span>
         </div>
-        <Button href="/download" variant="steel" block>
+        <Button href="/download" variant="steel" size="sm" block>
           Baixar o Jogo
         </Button>
       </form>

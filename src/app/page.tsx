@@ -1,101 +1,87 @@
 import Image from "next/image";
 import { AuthTabs } from "@/components/AuthTabs";
-import { Button } from "@/components/ui";
+import { Button, Crest, HeroArt } from "@/components/ui";
 import { DISCORD_INVITE_URL, SERVER_NAME } from "@/lib/portal-data";
 
 export default function LoginPage() {
   return (
-    <div
-      className="wyd-screen"
-      style={{
-        minHeight: "100vh",
-        position: "relative",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 24,
-      }}
-    >
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: "url('/assets/wyd-keyart.png') center/cover",
-          zIndex: 0,
-        }}
-      />
-      <div style={{ position: "absolute", inset: 0, background: "var(--vignette)", zIndex: 1 }} />
-      <div style={{ position: "absolute", inset: 0, background: "rgba(10,8,5,0.58)", zIndex: 1 }} />
-
-      <div style={{ position: "relative", zIndex: 2, width: "100%", maxWidth: 420 }}>
-        <div style={{ textAlign: "center", marginBottom: 22 }}>
+    <div className="wyd-auth">
+      <div className="wyd-auth__art">
+        <HeroArt sizes="(max-width: 900px) 100vw, 55vw" />
+        <div className="wyd-auth__art-shade" />
+        <div className="wyd-auth__brand">
           <Image
             src="/assets/wyd-logo-crop.png"
             alt="WYD"
-            width={189}
-            height={88}
-            priority
-            style={{ height: 88, width: "auto", filter: "drop-shadow(0 4px 14px rgba(0,0,0,0.85))" }}
+            width={103}
+            height={48}
+            style={{ height: 48, width: "auto", filter: "drop-shadow(0 4px 14px rgba(0,0,0,0.85))" }}
           />
-          <div
-            style={{
-              fontFamily: "var(--font-ui)",
-              fontSize: 12,
-              letterSpacing: "0.24em",
-              textTransform: "uppercase",
-              color: "var(--gold-300)",
-              marginTop: 10,
-              textShadow: "0 2px 8px #000",
-            }}
-          >
-            Seu destino aguarda em {SERVER_NAME}
+          <span>{SERVER_NAME.split(" ")[0]}</span>
+        </div>
+        <div className="wyd-auth__pitch wyd-screen">
+          <h1 className="wyd-hero__title">
+            O mundo espera
+            <br />
+            por você.
+          </h1>
+          <p>Retorne a Kersef. Reúna seu grupo.</p>
+          <p>A próxima batalha começa aqui.</p>
+          <div className="wyd-auth__sig">
+            <span>{SERVER_NAME}</span>
+            <i />
+            <span>With Your Destiny</span>
           </div>
         </div>
+      </div>
 
-        <AuthTabs />
+      <div className="wyd-auth__panel">
+        <div className="wyd-auth__card wyd-screen">
+          <div className="wyd-frame wyd-frame--lg wyd-frame--crest">
+            <Crest />
+            <h2 className="wyd-auth__title wyd-title-gold">Acessar Conta</h2>
+            <AuthTabs />
 
-        <div
-          style={{
-            textAlign: "center",
-            marginTop: 18,
-            fontFamily: "var(--font-body)",
-            fontSize: 13,
-            color: "var(--parchment-300)",
-            textShadow: "0 1px 6px #000",
-          }}
-        >
-          Acesse de qualquer dispositivo —{" "}
-          <span style={{ color: "var(--gold-300)" }}>PC, celular ou tablet</span>.
-        </div>
+            <div style={{ marginTop: 24 }}>
+              <div className="wyd-divider wyd-divider--gem" style={{ marginBottom: 16 }}>
+                <span />
+              </div>
+              <p
+                style={{
+                  textAlign: "center",
+                  fontFamily: "var(--font-body)",
+                  fontSize: 13,
+                  color: "var(--parchment-300)",
+                  margin: "0 0 12px",
+                }}
+              >
+                Dúvidas ou quer conhecer o servidor antes de criar a conta?
+              </p>
+              <Button
+                href={DISCORD_INVITE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="ghost"
+                size="sm"
+                block
+              >
+                Entrar no Discord
+              </Button>
+            </div>
+          </div>
 
-        <div
-          style={{
-            marginTop: 22,
-            paddingTop: 18,
-            borderTop: "1px solid var(--iron-400)",
-            textAlign: "center",
-          }}
-        >
-          <div
+          <p
             style={{
+              textAlign: "center",
+              marginTop: 18,
               fontFamily: "var(--font-body)",
               fontSize: 13,
-              color: "var(--parchment-300)",
-              marginBottom: 10,
-              textShadow: "0 1px 6px #000",
+              color: "var(--iron-200)",
             }}
           >
-            Dúvidas ou quer conhecer o servidor antes de criar a conta?
-          </div>
-          <Button
-            href={DISCORD_INVITE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            variant="ghost"
-            block
-          >
-            Entrar no Discord
-          </Button>
+            Acesse de qualquer dispositivo —{" "}
+            <span style={{ color: "var(--gold-300)" }}>PC, celular ou tablet</span>.
+          </p>
         </div>
       </div>
     </div>

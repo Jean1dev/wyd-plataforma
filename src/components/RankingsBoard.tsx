@@ -97,16 +97,7 @@ export function RankingsBoard() {
         </button>
       </div>
 
-      <div
-        style={{
-          background: "var(--grad-panel)",
-          border: "1px solid var(--iron-400)",
-          borderRadius: "var(--radius-lg)",
-          boxShadow: "var(--bevel-raise), var(--shadow-md)",
-          padding: 10,
-          overflowX: "auto",
-        }}
-      >
+      <div className="wyd-frame" style={{ padding: 12, overflowX: "auto" }}>
         <div
           style={{
             display: "flex",
@@ -114,13 +105,14 @@ export function RankingsBoard() {
             gap: 14,
             padding: "6px 14px 10px",
             minWidth: 720,
-            borderBottom: "1px solid var(--iron-400)",
+            borderBottom: "1px solid var(--gold-800)",
             marginBottom: 4,
-            fontFamily: "var(--font-ui)",
+            fontFamily: "var(--font-display)",
             fontSize: 11,
-            letterSpacing: "0.12em",
+            fontWeight: 600,
+            letterSpacing: "0.14em",
             textTransform: "uppercase",
-            color: "var(--text-faint)",
+            color: "var(--gold-500)",
           }}
         >
           <span style={{ width: 32, textAlign: "center" }}>#</span>
