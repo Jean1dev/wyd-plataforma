@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { getSession, isModerator } from "@/lib/auth/session";
 import { TopNav } from "@/components/TopNav";
+import { SiteFooter } from "@/components/SiteFooter";
 import { formatDonate } from "@/lib/donate/format";
 import { getDonateBalance } from "@/lib/donate/balance";
 
@@ -24,9 +25,10 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   const donateBalance = await loadDonateBalance(session.accountId);
 
   return (
-    <div>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <TopNav userName={session.name ?? "Jogador"} isModerator={isModerator(session)} donateBalance={donateBalance} />
-      <main>{children}</main>
+      <main style={{ flex: 1 }}>{children}</main>
+      <SiteFooter />
     </div>
   );
 }

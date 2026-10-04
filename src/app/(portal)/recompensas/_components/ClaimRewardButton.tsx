@@ -48,7 +48,7 @@ export function ClaimRewardButton({ itemId, disabled, onClaimed }: Props) {
 
   return (
     <div style={{ display: "grid", gap: 8 }}>
-      <Button type="button" size="sm" variant="ghost" disabled={busy || disabled} onClick={claim}>
+      <Button type="button" size="sm" disabled={busy || disabled} onClick={claim}>
         {busy ? "Resgatando..." : "Resgatar"}
       </Button>
       {error ? (

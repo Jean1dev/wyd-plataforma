@@ -27,34 +27,17 @@ export default async function LojaPage() {
   const { icons, iconPackVersion } = await pickItemIcons(shop.items.map((it) => it.item_index));
 
   return (
-    <div className="wyd-screen" style={{ maxWidth: 1320, margin: "0 auto", padding: "32px 24px 72px" }}>
-      <div className="wyd-eyebrow" style={{ marginBottom: 6 }}>
-        Tesouro do Reino
-      </div>
-      <h1
-        style={{
-          fontFamily: "var(--font-display)",
-          fontWeight: 700,
-          fontSize: "clamp(30px,5vw,38px)",
-          color: "var(--gold-400)",
-          margin: "0 0 24px",
-        }}
-      >
-        Loja de Donate
-      </h1>
+    <div className="wyd-screen wyd-container">
+      <header className="wyd-page-head">
+        <div className="wyd-eyebrow">Tesouro do Reino</div>
+        <h1 className="wyd-title-gold">Loja de Donate</h1>
+        <div className="wyd-divider wyd-divider--gem">
+          <span />
+        </div>
+      </header>
 
       {shop.status === "unavailable" ? (
-        <div
-          style={{
-            background: "var(--grad-panel)",
-            border: "1px solid var(--iron-400)",
-            borderRadius: "var(--radius-lg)",
-            boxShadow: "var(--bevel-raise), var(--shadow-md)",
-            padding: 22,
-            color: "var(--text-muted)",
-            fontFamily: "var(--font-body)",
-          }}
-        >
+        <div className="wyd-frame wyd-muted">
           Não foi possível carregar a loja agora. Verifique sua sessão e tente novamente.
         </div>
       ) : (

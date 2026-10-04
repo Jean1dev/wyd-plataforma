@@ -1,12 +1,5 @@
 import { ClassCrest, type WydClass } from "./ClassCrest";
 
-function rankColor(rank: number) {
-  if (rank === 1) return "var(--gold-300)";
-  if (rank === 2) return "var(--steel-300)";
-  if (rank === 3) return "var(--parchment-300)";
-  return "var(--text-faint)";
-}
-
 export function RankRow({
   rank,
   name,
@@ -36,27 +29,33 @@ export function RankRow({
 
   return (
     <div
+      className="wyd-rank-row"
       style={{
         display: "grid",
         gridTemplateColumns: "32px 38px minmax(0,1fr) 58px 74px minmax(96px,130px)",
         alignItems: "center",
         gap: 14,
         padding: "10px 14px",
-        borderRadius: "var(--radius-sm)",
       }}
     >
-      <span
-        style={{
-          width: 32,
-          textAlign: "center",
-          fontFamily: "var(--font-display)",
-          fontWeight: 700,
-          fontSize: "var(--text-lg)",
-          color: rankColor(rank),
-        }}
-      >
-        {rank}
-      </span>
+      {rank <= 3 ? (
+        <span style={{ width: 32, display: "flex", justifyContent: "center" }}>
+          <span className={`wyd-medal wyd-medal--${rank}`}>{rank}</span>
+        </span>
+      ) : (
+        <span
+          style={{
+            width: 32,
+            textAlign: "center",
+            fontFamily: "var(--font-display)",
+            fontWeight: 700,
+            fontSize: "var(--text-lg)",
+            color: "var(--text-faint)",
+          }}
+        >
+          {rank}
+        </span>
+      )}
       <span style={{ width: 38, display: "flex", justifyContent: "center" }}>
         {cls ? (
           <ClassCrest cls={cls} size="sm" />

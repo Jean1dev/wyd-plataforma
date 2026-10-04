@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "react";
 
-type Variant = "primary" | "steel" | "ghost";
+type Variant = "primary" | "steel" | "ghost" | "cta";
 type Size = "sm" | "md" | "lg";
 
 type BaseProps = {

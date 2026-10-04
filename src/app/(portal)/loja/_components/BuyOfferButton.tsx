@@ -53,7 +53,7 @@ export function BuyOfferButton({ itemId, onBalance }: Props) {
 
   return (
     <div style={{ display: "grid", gap: 8 }}>
-      <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={buy}>
+      <Button type="button" size="sm" disabled={busy} onClick={buy}>
         {busy ? "Comprando..." : "Comprar"}
       </Button>
       {msg ? (

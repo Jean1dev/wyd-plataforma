@@ -36,47 +36,21 @@ export default async function RecompensasPage() {
   );
 
   return (
-    <div className="wyd-screen" style={{ maxWidth: 1140, margin: "0 auto", padding: "32px 24px 72px" }}>
-      <div className="wyd-eyebrow" style={{ marginBottom: 6 }}>
-        Bênção diária do reino
-      </div>
-      <h1
-        style={{
-          fontFamily: "var(--font-display)",
-          fontWeight: 700,
-          fontSize: "clamp(30px,5vw,38px)",
-          color: "var(--gold-400)",
-          margin: "0 0 6px",
-        }}
-      >
-        Recompensas Diárias
-      </h1>
-      <p
-        style={{
-          fontFamily: "var(--font-body)",
-          fontSize: 16,
-          color: "var(--parchment-200)",
-          maxWidth: 560,
-          margin: "0 0 24px",
-          textWrap: "pretty",
-        }}
-      >
-        Escolha uma oferta gratuita para resgatar hoje. Você pode resgatar{" "}
-        <strong style={{ color: "var(--gold-300)" }}>uma vez por dia</strong>, entre todas as ofertas disponíveis.
-      </p>
+    <div className="wyd-screen wyd-container wyd-container--narrow">
+      <header className="wyd-page-head">
+        <div className="wyd-eyebrow">Bênção diária do reino</div>
+        <h1 className="wyd-title-gold">Recompensas Diárias</h1>
+        <p>
+          Escolha uma oferta gratuita para resgatar hoje. Você pode resgatar{" "}
+          <strong style={{ color: "var(--gold-300)" }}>uma vez por dia</strong>, entre todas as ofertas disponíveis.
+        </p>
+        <div className="wyd-divider wyd-divider--gem">
+          <span />
+        </div>
+      </header>
 
       {rewards.status === "unavailable" ? (
-        <div
-          style={{
-            background: "var(--grad-panel)",
-            border: "1px solid var(--iron-400)",
-            borderRadius: "var(--radius-lg)",
-            boxShadow: "var(--bevel-raise), var(--shadow-md)",
-            padding: 22,
-            color: "var(--text-muted)",
-            fontFamily: "var(--font-body)",
-          }}
-        >
+        <div className="wyd-frame wyd-muted">
           Não foi possível carregar as recompensas agora. Verifique sua sessão e tente novamente.
         </div>
       ) : (

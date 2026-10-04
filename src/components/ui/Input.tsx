@@ -2,30 +2,21 @@ import type { InputHTMLAttributes } from "react";
 
 type InputProps = {
   label?: string;
+  /** Steel rim + scroll end caps — for the few hero forms (login, signup). */
+  ornate?: boolean;
 } & InputHTMLAttributes<HTMLInputElement>;
 
-export function Input({ label, id, name, ...rest }: InputProps) {
+export function Input({ label, ornate, id, name, className, ...rest }: InputProps) {
   const inputId = id ?? name;
   return (
-    <label
-      htmlFor={inputId}
-      style={{ display: "flex", flexDirection: "column", gap: 6 }}
-    >
-      {label ? (
-        <span
-          style={{
-            fontFamily: "var(--font-ui)",
-            fontSize: "var(--text-xs)",
-            fontWeight: 500,
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            color: "var(--text-muted)",
-          }}
-        >
-          {label}
-        </span>
-      ) : null}
-      <input id={inputId} name={name} className="wyd-input" {...rest} />
+    <label htmlFor={inputId} className={ornate ? "wyd-field wyd-field--ornate" : "wyd-field"}>
+      {label ? <span className="wyd-field__label">{label}</span> : null}
+      <input
+        id={inputId}
+        name={name}
+        className={["wyd-input", ornate ? "wyd-input--ornate" : "", className ?? ""].filter(Boolean).join(" ")}
+        {...rest}
+      />
     </label>
   );
 }

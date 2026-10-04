@@ -9,3 +9,5 @@ export { ItemIcon } from "./ItemIcon";
 export { RankRow } from "./RankRow";
 export { Input } from "./Input";
 export { Checkbox } from "./Checkbox";
+export { Crest } from "./ornaments";
+export { HeroArt } from "./HeroArt";
