@@ -1,6 +1,7 @@
 import "server-only";
 
-import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Readable } from "node:stream";
 import { cleanStorageValue } from "./launcher-config";
 
@@ -36,6 +37,14 @@ export async function uploadClientObject(body: Readable, contentLength?: number)
   }));
 }
 
-export async function getClientObject() {
-  return storageClient().send(new GetObjectCommand({ Bucket: bucket, Key: LAUNCHER_CLIENT_KEY }));
+// The client is ~200 MB: hand out a short-lived signed URL so the download goes
+// straight to the bucket instead of being piped through a Vercel Function.
+export async function getClientDownloadUrl() {
+  const client = storageClient();
+  await client.send(new HeadObjectCommand({ Bucket: bucket, Key: LAUNCHER_CLIENT_KEY }));
+  return getSignedUrl(client, new GetObjectCommand({
+    Bucket: bucket,
+    Key: LAUNCHER_CLIENT_KEY,
+    ResponseContentDisposition: 'attachment; filename="wyd-client.zip"',
+  }), { expiresIn: 3600 });
 }
