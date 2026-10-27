@@ -9,7 +9,9 @@ test("storage configuration accepts BOM and surrounding whitespace", () => {
 });
 
 test("only a missing client object is a 404", () => {
-  assert.equal(clientDownloadStatus(Object.assign(new Error(), { name: "NoSuchKey" })), 404);
+  for (const name of ["NoSuchKey", "NotFound"]) {
+    assert.equal(clientDownloadStatus(Object.assign(new Error(), { name })), 404);
+  }
   for (const name of ["AccessDenied", "InvalidRegion", "NoSuchBucket", "TimeoutError"]) {
     assert.equal(clientDownloadStatus(Object.assign(new Error(), { name })), 503);
   }

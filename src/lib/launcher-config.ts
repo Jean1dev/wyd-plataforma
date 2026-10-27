@@ -3,7 +3,7 @@ export function cleanStorageValue(value: string | undefined): string | undefined
 }
 
 export function clientDownloadStatus(error: unknown): 404 | 503 {
-  return error instanceof Error && error.name === "NoSuchKey" ? 404 : 503;
+  return error instanceof Error && (error.name === "NoSuchKey" || error.name === "NotFound") ? 404 : 503;
 }
 
 export function launcherAssetUrl(release: unknown): string {
