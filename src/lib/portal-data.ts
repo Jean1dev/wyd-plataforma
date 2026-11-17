@@ -91,7 +91,7 @@ export const NEWS = [
 export const REQ_MIN = ["Windows 10/11 64-bit", "Core i3 / equivalente", "4 GB de RAM", "DirectX 9.0c", "5 GB livres"];
 export const REQ_REC = ["Windows 10/11 64-bit", "Core i5 / Ryzen 5", "8 GB de RAM", "DirectX 11", "SSD · 10 GB livres"];
 
-export const DISCORD_INVITE_URL = "https://discord.gg/msCswzyqg";
+export const DISCORD_INVITE_URL = "https://discord.gg/QXywbvPh7U";
 
 export const COMMUNITY_HIGHLIGHTS = [
   {
